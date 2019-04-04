@@ -1,4 +1,4 @@
-package com.nedap.university;
+package com.nedap.university.client;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -52,7 +52,7 @@ public class FileServer_ClientSide {
     	testPacket[0] = 0;
     	testPacket[1] = 0;
     	testPacket[2] = 0;
-    	testPacket[3] = 5;
+    	testPacket[3] = 1;
     	//Ack. number:
     	testPacket[4] = 0;
     	testPacket[5] = 0;

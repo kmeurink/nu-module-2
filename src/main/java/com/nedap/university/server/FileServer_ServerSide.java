@@ -1,4 +1,4 @@
-package com.nedap.university;
+package com.nedap.university.server;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

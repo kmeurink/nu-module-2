@@ -1,4 +1,4 @@
-package com.nedap.university;
+package com.nedap.university.client;
 import javax.swing.*;
 import java.awt.*;
 
