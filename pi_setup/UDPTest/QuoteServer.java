@@ -40,20 +40,25 @@ public class QuoteServer {
  
     private void service() throws IOException {
         while (true) {
+        	//Receive packet from client.
             DatagramPacket request = new DatagramPacket(new byte[1], 1);
             socket.receive(request);
  
+            //Take random quote from the file and transform into bytes.
             String quote = getRandomQuote();
             byte[] buffer = quote.getBytes();
  
+            //Get address and port of client from the request.
             InetAddress clientAddress = request.getAddress();
             int clientPort = request.getPort();
  
+            //Send packet with chosen quote to the client.
             DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddress, clientPort);
             socket.send(response);
         }
     }
  
+    //Load the quotes from a file into a string array.
     private void loadQuotesFromFile(String quoteFile) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(quoteFile));
         String aQuote;
@@ -65,6 +70,7 @@ public class QuoteServer {
         reader.close();
     }
  
+    //Select random quote from the array.
     private String getRandomQuote() {
         int randomIndex = random.nextInt(listQuotes.size());
         String randomQuote = listQuotes.get(randomIndex);
