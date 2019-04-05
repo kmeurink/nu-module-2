@@ -13,11 +13,14 @@ import java.util.Random;
 
 public class FileServer_ServerSide {
 
+	//Named constants:
     private DatagramSocket socket;
     private List<String> listQuotes = new ArrayList<String>();
     private Random random;
 	private static int serverPort = 8080;
 
+	
+	//Constructors:	
     public FileServer_ServerSide(int port) throws SocketException {
         socket = new DatagramSocket(port);
         random = new Random();
@@ -38,7 +41,15 @@ public class FileServer_ServerSide {
         }
     }
     
-    /**
+
+	
+	
+	//Queries:
+	
+	
+	
+	//Commands:
+     /**
      * Class to run all required actions during its connection.
      * @throws IOException
      */

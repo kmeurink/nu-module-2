@@ -5,19 +5,17 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.Random;
 
 public class FileServer_ClientSide {
-//Named variables:
+	//Named variables:
 	private static int clientPort = 8090;//TODO add way for client to set own port.
 	private static int serverPort = 8080;
     private DatagramSocket socket;
 
 	
 	
-	
+	//Constructors:
     public FileServer_ClientSide(int port) throws SocketException {
         socket = new DatagramSocket(port);
     }
@@ -39,6 +37,11 @@ public class FileServer_ClientSide {
             ex.printStackTrace();
         }
     }
+    
+    //Queries:
+    
+    
+    //Commands:
     /**
      * Broadcasts a packet into the network to find its file server.
      * @param socket
