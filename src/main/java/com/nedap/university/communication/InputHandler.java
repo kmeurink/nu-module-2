@@ -8,6 +8,7 @@ package com.nedap.university.communication;
 public class InputHandler {//TODO perhaps better as a method, but is used by both server and client.
 	//Named Constants:
 	
+	
 	//Constructors:
 	
 	
