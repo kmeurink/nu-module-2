@@ -9,7 +9,7 @@ import java.net.InetAddress;
  * @author kester.meurink
  *
  */
-public class PacketReceiver {//TODO perhaps better as a method, but is used by both server and client. Also has to be given the socket to work.
+public class PacketReceiver implements Runnable{//TODO perhaps better as a method, but is used by both server and client. Also has to be given the socket to work.
 	
 	//Named Constants:
 	private DatagramSocket socket;
@@ -17,11 +17,18 @@ public class PacketReceiver {//TODO perhaps better as a method, but is used by b
 	private int receiverPort;
 	private InetAddress receiverAddress;
 	private byte[] packetData;
+	private boolean active = true;
 	
 	//Constructors:
+	
 	public PacketReceiver(DatagramSocket socket) {
 		this.socket = socket;
 		this.packetData = new byte[512];
+	}
+	
+	//Multithreading commands:
+	public void run() {
+		
 	}
 	
 	//Queries:
@@ -48,7 +55,7 @@ public class PacketReceiver {//TODO perhaps better as a method, but is used by b
      * @throws IOException
      */
     public void receivePacket() throws IOException { //TODO rewrite method, is messy
-        //while (true) {
+        while (active) {
         	//Receive packet from client.
             DatagramPacket request = new DatagramPacket(new byte[packetSize], packetSize);
             socket.receive(request);
@@ -62,7 +69,20 @@ public class PacketReceiver {//TODO perhaps better as a method, but is used by b
             this.receiverAddress = request.getAddress();
             this.receiverPort = request.getPort();
             //TODO add perhaps a notify that notifies the handler to do something with the received packet.
-        //}
+        }
+    }
+    
+    /**
+     * Starts or stops the receiving depending on its current state.
+     */
+    public void startStopReceiving() {
+    	if (this.active == false) {
+    		this.active = true;
+    		System.out.println("Starting receiver");
+    	} else {
+    		this.active = false;
+    		System.out.println("Stopping receiver");
+    	}
     }
     
     

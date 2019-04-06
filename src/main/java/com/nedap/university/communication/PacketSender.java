@@ -10,7 +10,7 @@ import java.net.UnknownHostException;
  * @author kester.meurink
  *
  */
-public class PacketSender { //TODO perhaps better as a method, but is used by both server and client. Also has to be given the socket to work.
+public class PacketSender implements Runnable{ //TODO perhaps better as a method, but is used by both server and client. Also has to be given the socket to work.
 	//Named Constants:
     private DatagramSocket socket;
     public static InetAddress BROADCAST;
@@ -21,6 +21,11 @@ public class PacketSender { //TODO perhaps better as a method, but is used by bo
 	public PacketSender(DatagramSocket socket) throws UnknownHostException {
 		this.socket = socket;
 		this.BROADCAST = InetAddress.getByName("255.255.255.255");
+	}
+	
+	//Multithreading commands:
+	public void run() {
+		
 	}
 	
 	//Queries:
