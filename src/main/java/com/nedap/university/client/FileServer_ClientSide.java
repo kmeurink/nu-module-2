@@ -7,23 +7,30 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
+import com.nedap.university.communication.PacketReceiver;
+
 public class FileServer_ClientSide {
 	//Named variables:
 	private static int clientPort = 8090;//TODO add way for client to set own port.
 	private static int serverPort = 8080;
     private DatagramSocket socket;
-
-	
+    //private PacketReceiver packetReceiver;
 	
 	//Constructors:
     public FileServer_ClientSide(int port) throws SocketException {
-        socket = new DatagramSocket(port);
+    	socket = new DatagramSocket(port);
     }
     
     public static void main(String[] args) {
 
     	FileServer_ClientSide testClient;
-
+		try {
+			testClient = new FileServer_ClientSide(clientPort);//create new instance of class and initialize
+	    	Thread receivingThread = new Thread(new PacketReceiver(testClient.getSocket()));//Create and start receiver thread giving the socket as argument
+	    	receivingThread.start();//TODO perhaps move this thread to filehandler
+		} catch (SocketException e1) { //TODO handle error
+			e1.printStackTrace();
+		}
 
 
         try {//Setup connection with server
@@ -40,6 +47,13 @@ public class FileServer_ClientSide {
     
     //Queries:
     
+    /**
+     * Returns the socket created for the client.
+     * @return
+     */
+    public DatagramSocket getSocket() {
+    	return this.socket;
+    }
     
     //Commands:
     /**
