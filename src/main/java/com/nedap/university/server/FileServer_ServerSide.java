@@ -23,7 +23,6 @@ public class FileServer_ServerSide {
 	//Constructors:	
     public FileServer_ServerSide(int port) throws SocketException {
         socket = new DatagramSocket(port);
-        random = new Random();
     }
  
     public static void main(String[] args) {
@@ -53,7 +52,7 @@ public class FileServer_ServerSide {
      * Class to run all required actions during its connection.
      * @throws IOException
      */
-    private void service() throws IOException {
+    private void service() throws IOException { //TODO rename
         while (true) {
         	//Receive packet from client.
             DatagramPacket request = new DatagramPacket(new byte[13], 13);

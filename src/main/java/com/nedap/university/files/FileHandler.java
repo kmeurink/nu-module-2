@@ -3,7 +3,13 @@ package com.nedap.university.files;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FileHandler {
+/**
+ * Class takes care of all the separate downloads and uploads.
+ * Also has the inputhandler and sender/receiver classes to communicate with the other side.
+ * @author kester.meurink
+ *
+ */
+public class FileHandler { //TODO make multithreaded? Depends on how the main function works
 	//Named constants:
 	private List<DownUploader> downloaders;
 	private List<DownUploader> uploaders;

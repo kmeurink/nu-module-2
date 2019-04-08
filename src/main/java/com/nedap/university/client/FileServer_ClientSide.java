@@ -9,9 +9,11 @@ import java.net.UnknownHostException;
 
 import com.nedap.university.communication.PacketReceiver;
 
+//TODO determine what distinguishes server and client, otherwise they should be combined.
 public class FileServer_ClientSide {
 	//Named variables:
 	private static int clientPort = 8090;//TODO add way for client to set own port.
+	private static int clientPortThreaded = 8099;//TODO add way for client to set own port.
 	private static int serverPort = 8080;
     private DatagramSocket socket;
     //private PacketReceiver packetReceiver;
@@ -25,7 +27,7 @@ public class FileServer_ClientSide {
 
     	FileServer_ClientSide testClient;
 		try {
-			testClient = new FileServer_ClientSide(clientPort);//create new instance of class and initialize
+			testClient = new FileServer_ClientSide(clientPortThreaded);//create new instance of class and initialize
 	    	Thread receivingThread = new Thread(new PacketReceiver(testClient.getSocket()));//Create and start receiver thread giving the socket as argument
 	    	receivingThread.start();//TODO perhaps move this thread to filehandler
 		} catch (SocketException e1) { //TODO handle error
@@ -102,7 +104,7 @@ public class FileServer_ClientSide {
      * Class to receive and print all packets during its connection.
      * @throws IOException
      */
-    private void service() throws IOException {
+    private void service() throws IOException { //TODO rename
         while (true) {
         	//Receive packet from client.
             DatagramPacket request = new DatagramPacket(new byte[13], 13);

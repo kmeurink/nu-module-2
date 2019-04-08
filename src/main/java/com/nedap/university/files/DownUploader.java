@@ -14,7 +14,7 @@ import java.util.List;
  *
  */
 //TODO i have combined uploader and downloader, as they should have the same methods.
-public class DownUploader {//TODO work out how it should work.
+public class DownUploader {//TODO work out how it should work. And make it multithreaded?
 	
 	//Named constants:
 	private String fileName;
@@ -23,6 +23,7 @@ public class DownUploader {//TODO work out how it should work.
 	private String filePath= ""; //TODO determine how to choose this.
 	private File file;
 	private byte[] packetDataSize = new byte[499]; //TODO be able to set this size.
+	private int lastPacketSize = 0;
 	
 	//Constructors:
 	public DownUploader() {
@@ -52,15 +53,31 @@ public class DownUploader {//TODO work out how it should work.
 	//Commands:
 	
 	/**
-	 * Determines the size of the total file.
+	 * Determines the size of the filedata that is currently present.
 	 * @return
 	 */
-	private int determineSize() {
+	public int determineSize() {
 		int size = 0;
 		for (byte[] i : this.fileData) {
 			size += i.length;
 		}
 		return size;
+	}
+	
+	/**
+	 * Sets the size of the data packet that is expected.
+	 * @param size
+	 */
+	public void setSize(int size) {
+		this.fileSize = size;
+	}
+	
+	/**
+	 * Sets the name of the file including data type.
+	 * @param name
+	 */
+	public void setName(String name) {
+		this.fileName = name;
 	}
 	
 	/**
@@ -85,7 +102,9 @@ public class DownUploader {//TODO work out how it should work.
 		}
 		try {
 			FileOutputStream fos = new FileOutputStream(fileName);
-			fos.write(finalFile);
+			for(byte i : finalFile) {
+				fos.write(i);
+			}
 			fos.flush();
 			fos.close();
 		} catch (FileNotFoundException e) { //TODO handle error
@@ -100,14 +119,33 @@ public class DownUploader {//TODO work out how it should work.
 	 * Reads out the file that is to be uploaded, and stores it as a list of byte arrays.
 	 */
 	public void readOutFile(String name) { //name includes full directory
-		try {
+		try { //TODO tidy up
 			//File readFile = new File(name);
+			this.fileData.clear(); //Make sure no data is currently present.
 			FileInputStream fis = new FileInputStream(name);
-			this.fileSize = fis.available();
 			int content;
+			this.fileSize = fis.available();
 			while ((content = fis.read(packetDataSize)) != -1) {
-				this.fileData.add(packetDataSize);
+				this.fileData.add(packetDataSize.clone());
+				//System.out.println(new String(packetDataSize));
+				//System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+				int templastPacketSize = (packetDataSize.length < fis.available()) ? 499 :fis.available();
+				lastPacketSize = (templastPacketSize == 0) ? lastPacketSize : templastPacketSize;
 			}
+			//System.out.println("Last packet was: " + lastPacketSize);
+			if (this.lastPacketSize != 499) {
+				byte[] resizedDataBlock = new byte[this.lastPacketSize];
+				byte[] temp = this.fileData.get(this.fileData.size() - 1);
+				for (int i = 0; i < lastPacketSize; i++) {
+					resizedDataBlock[i] = temp[i];
+				}
+				this.fileData.set(this.fileData.size() - 1, resizedDataBlock);
+			}
+			//for (byte[] i : this.fileData) {
+			//	System.out.println(new String(i));
+			//}
+			//System.out.println("----------------------------------------------------------------------");
+
 		}catch (FileNotFoundException e) { //TODO handle error
 			e.printStackTrace();
 		} catch (IOException e) { //TODO handle error
@@ -122,9 +160,23 @@ public class DownUploader {//TODO work out how it should work.
 		return this.fileData;
 	}
 	
-	public byte[] sendDataSingle(int dataBlock) { //TODO which is better for the filehandler
+	public byte[] sendDataSingle(int dataBlock) { //TODO which is better for the filehandler?
 		return this.fileData.get(dataBlock);
 	}
 	
+	//TODO determine what class has to do what with keeping track of the properties.
+	//TODO currently packetbuilder also has these methods.
+	/**
+	 * Sets the sequence number of this specific download/upload.
+	 */
+	public void setSeqNumber(int seq) {
+		
+	}
 	
+	/**
+	 * Sets the acknowledgement number of this specific download/upload.
+	 */
+	public void setAckNumber(int ack) {
+		
+	}
 }
