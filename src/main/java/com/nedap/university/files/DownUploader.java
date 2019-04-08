@@ -13,8 +13,8 @@ import java.util.List;
  * @author kester.meurink
  *
  */
-//TODO perhaps combine uploader and downloader, as they should have the same methods.
-public class Downloader {//TODO work out how it should work.
+//TODO i have combined uploader and downloader, as they should have the same methods.
+public class DownUploader {//TODO work out how it should work.
 	
 	//Named constants:
 	private String fileName;
@@ -25,7 +25,7 @@ public class Downloader {//TODO work out how it should work.
 	private byte[] packetDataSize = new byte[499]; //TODO be able to set this size.
 	
 	//Constructors:
-	public Downloader() {
+	public DownUploader() {
 		this.fileData = new ArrayList<byte[]>();
 	}
 	
