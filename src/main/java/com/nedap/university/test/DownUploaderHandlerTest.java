@@ -12,62 +12,37 @@ import com.nedap.university.files.DownUploaderHandler;
 
 public class DownUploaderHandlerTest {
 	private DownUploaderHandler fileHandlerTest;
-	DownUploader upload1;
-	DownUploader upload2;
-	DownUploader download1;
-	DownUploader download2;
+	DownUploader downUpload1;
+	DownUploader downUpload2;
 	
 	@Before
 	public void setUp() throws Exception {
 		fileHandlerTest = new DownUploaderHandler();
-		upload1 = new DownUploader();
-		upload2 = new DownUploader();
-		download1 = new DownUploader();
-		download2 = new DownUploader();
+		downUpload1 = new DownUploader();
+		downUpload2 = new DownUploader();
 	}
 
 	@Test
 	public void testFileHandlerInit() {
-		assertTrue(fileHandlerTest.getDownloads().isEmpty());
-		assertTrue(fileHandlerTest.getUploads().isEmpty());
+		assertTrue(fileHandlerTest.getDownUploads().isEmpty());
 	}
 
 	@Test
-	public void testAddDownload() {
-		fileHandlerTest.addDownload(download1);
-		assertEquals(1, fileHandlerTest.getDownloads().size());
-		fileHandlerTest.addDownload(download2);
-		assertEquals(2, fileHandlerTest.getDownloads().size());
+	public void testAddDownUpload() {
+		fileHandlerTest.addDownUpload(downUpload1);
+		assertEquals(1, fileHandlerTest.getDownUploads().size());
+		fileHandlerTest.addDownUpload(downUpload2);
+		assertEquals(2, fileHandlerTest.getDownUploads().size());
 	}
 
 	@Test
-	public void testAddUpload() {
-		fileHandlerTest.addUpload(upload1);
-		assertEquals(1, fileHandlerTest.getUploads().size());
-		fileHandlerTest.addUpload(upload2);
-		assertEquals(2, fileHandlerTest.getUploads().size());	
-		}
-
-	@Test
-	public void testRemoveDownload() {
-		fileHandlerTest.addDownload(download1);
-		assertEquals(1, fileHandlerTest.getDownloads().size());
-		fileHandlerTest.addDownload(download2);
-		assertEquals(2, fileHandlerTest.getDownloads().size());
-		fileHandlerTest.removeDownload(download1);
-		assertEquals(1, fileHandlerTest.getDownloads().size());
-		assertTrue(fileHandlerTest.getDownloads().contains(download2));
+	public void testRemoveDownUpload() {
+		fileHandlerTest.addDownUpload(downUpload1);
+		assertEquals(1, fileHandlerTest.getDownUploads().size());
+		fileHandlerTest.addDownUpload(downUpload2);
+		assertEquals(2, fileHandlerTest.getDownUploads().size());
+		fileHandlerTest.removeDownUpload(downUpload1);
+		assertEquals(1, fileHandlerTest.getDownUploads().size());
+		assertTrue(fileHandlerTest.getDownUploads().contains(downUpload2));
 	}
-
-	@Test
-	public void testRemoveUpload() {
-		fileHandlerTest.addUpload(upload1);
-		assertEquals(1, fileHandlerTest.getUploads().size());
-		fileHandlerTest.addUpload(upload2);
-		assertEquals(2, fileHandlerTest.getUploads().size());
-		fileHandlerTest.removeUpload(upload2);
-		assertFalse(fileHandlerTest.getUploads().contains(upload2));
-
-	}
-
 }

@@ -22,11 +22,13 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	private List<byte[]> fileData; //TODO is list the best container?
 	private String filePath= ""; //TODO determine how to choose this.
 	private File file;
-	private byte[] packetDataSize = new byte[499]; //TODO be able to set this size.
+	private int standardFormat = 1024;
+	private byte[] packetDataSize = new byte[standardFormat]; //TODO be able to set this size.
 	private int lastPacketSize = 0;
+	private boolean download = true;
 	
 	//Constructors:
-	public DownUploader() {
+	public DownUploader() { //TODO make multithreaded?
 		this.fileData = new ArrayList<byte[]>();
 	}
 	
@@ -49,8 +51,27 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 		return this.fileSize;
 	}
 	
+	/**
+	 * Returns the status of this specific DownUploader.
+	 * @return
+	 */
+	public boolean getStatus( ) {
+		return this.download;
+	}
 	
 	//Commands:
+	
+	/**
+	 * Set whether the file is a download or upload.
+	 * @param i
+	 */
+	public void setStatus (boolean i) {
+		if (i) {
+			this.download = true; //It is a download.
+		} else {
+			this.download = false; //It is an upload.
+		}
+	}
 	
 	/**
 	 * Determines the size of the filedata that is currently present.
@@ -129,11 +150,11 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 				this.fileData.add(packetDataSize.clone());
 				//System.out.println(new String(packetDataSize));
 				//System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-				int templastPacketSize = (packetDataSize.length < fis.available()) ? 499 :fis.available();
+				int templastPacketSize = (packetDataSize.length < fis.available()) ? standardFormat :fis.available();
 				lastPacketSize = (templastPacketSize == 0) ? lastPacketSize : templastPacketSize;
 			}
 			//System.out.println("Last packet was: " + lastPacketSize);
-			if (this.lastPacketSize != 499) {
+			if (this.lastPacketSize != standardFormat) {
 				byte[] resizedDataBlock = new byte[this.lastPacketSize];
 				byte[] temp = this.fileData.get(this.fileData.size() - 1);
 				for (int i = 0; i < lastPacketSize; i++) {

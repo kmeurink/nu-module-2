@@ -11,68 +11,49 @@ import java.util.List;
  */
 public class DownUploaderHandler { //TODO make multithreaded? Depends on how the main function works
 	//Named constants:
-	private List<DownUploader> downloaders;
-	private List<DownUploader> uploaders;
+	private List<DownUploader> downUploaders;
 	
 	//Constructors:
 	public DownUploaderHandler() {
-		downloaders = new ArrayList<DownUploader>();
-		uploaders = new ArrayList<DownUploader>();
-
+		downUploaders = new ArrayList<DownUploader>();
 	}
 	
 	
 	//Queries:
-	
+		
 	/**
-	 * Returns the list of all downloads.
+	 * Returns the list of all active downloads/uploads.
 	 * @return
 	 */
-	public List<DownUploader> getDownloads() {
-		return this.downloaders;
+	public List<DownUploader> getDownUploads() {
+		return this.downUploaders;
 	}
 	
 	/**
-	 * Returns the list of all uploads.
+	 * Returns a specific download/upload.
 	 * @return
 	 */
-	public List<DownUploader> getUploads() {
-		return this.uploaders;
+	private DownUploader getDownUpload(int index) {
+		return this.downUploaders.get(index);
 	}
-	
 	
 	//Commands:
 	
 	/**
-	 * Adds new download to the list
+	 * Adds new download/upload to the list
 	 * @param download
 	 */
-	public void addDownload(DownUploader download) {
-		this.downloaders.add(download);
+	public void addDownUpload(DownUploader load) {
+		this.downUploaders.add(load);
 	}
 	
-	/**
-	 * Adds new upload to the list
-	 * @param upload
-	 */
-	public void addUpload(DownUploader upload) {
-		this.uploaders.add(upload);
-	}
 	
 	/**
 	 * Removes download from the list
 	 * @param download
 	 */
-	public void removeDownload(DownUploader download) {
-		this.downloaders.remove(download);
+	public void removeDownUpload(DownUploader load) {
+		this.downUploaders.remove(load);
 	}
-	
-	/**
-	 * Removes upload from the list
-	 * @param upload
-	 */
-	public void removeUpload(DownUploader upload) {
-		this.uploaders.remove(upload);
-	}
-	
+		
 }
