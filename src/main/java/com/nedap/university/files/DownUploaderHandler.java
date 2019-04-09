@@ -9,13 +9,13 @@ import java.util.List;
  * @author kester.meurink
  *
  */
-public class FileHandler { //TODO make multithreaded? Depends on how the main function works
+public class DownUploaderHandler { //TODO make multithreaded? Depends on how the main function works
 	//Named constants:
 	private List<DownUploader> downloaders;
 	private List<DownUploader> uploaders;
 	
 	//Constructors:
-	public FileHandler() {
+	public DownUploaderHandler() {
 		downloaders = new ArrayList<DownUploader>();
 		uploaders = new ArrayList<DownUploader>();
 

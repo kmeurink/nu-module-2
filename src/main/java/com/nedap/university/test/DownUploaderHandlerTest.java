@@ -6,10 +6,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.nedap.university.files.DownUploader;
-import com.nedap.university.files.FileHandler;
+import com.nedap.university.files.DownUploaderHandler;
 
-class FileHandlerTest {
-	private FileHandler fileHandlerTest;
+class DownUploaderHandlerTest {
+	private DownUploaderHandler fileHandlerTest;
 	DownUploader upload1;
 	DownUploader upload2;
 	DownUploader download1;
@@ -17,7 +17,7 @@ class FileHandlerTest {
 	
 	@BeforeEach
 	void setUp() throws Exception {
-		fileHandlerTest = new FileHandler();
+		fileHandlerTest = new DownUploaderHandler();
 		upload1 = new DownUploader();
 		upload2 = new DownUploader();
 		download1 = new DownUploader();
