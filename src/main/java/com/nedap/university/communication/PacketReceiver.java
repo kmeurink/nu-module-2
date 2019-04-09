@@ -13,7 +13,7 @@ public class PacketReceiver {//TODO perhaps better as a method, but is used by b
 	
 	//Named Constants:
 	private DatagramSocket socket;
-	private int packetSize = 512;//TODO remove eventually
+	private int packetSize = 1024;//TODO remove eventually
 	private int receiverPort;
 	private InetAddress receiverAddress;
 	//private byte[] packetData;

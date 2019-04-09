@@ -8,6 +8,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
+import com.nedap.university.communication.InputHandler;
 import com.nedap.university.communication.PacketReceiver;
 
 //TODO determine what distinguishes server and client, otherwise they should be combined.
@@ -16,12 +17,17 @@ public class FileServer_ClientSide {
 	private static int clientPort = 8090;//TODO add way for client to set own port.
 	private static int clientPortThreaded = 8099;//TODO add way for client to set own port.
 	private static int serverPort = 8080;
+	private boolean finished = false;
+	private boolean userFinished = false;
     private DatagramSocket socket;
-    //private PacketReceiver packetReceiver;
-	
+    private PacketReceiver packetReceiver;
+	private InputHandler inputHandler;
+    
 	//Constructors:
     public FileServer_ClientSide(int port) throws SocketException {
     	socket = new DatagramSocket(port);
+		packetReceiver = new PacketReceiver(socket);
+		inputHandler = new InputHandler();
     }
     
     public static void main(String[] args) {
@@ -74,14 +80,10 @@ public class FileServer_ClientSide {
 	public void serverConnection() {
 		while (!finished) {
 			try {
-				String input = serverIn.readLine();
-				checkCommands(input);
-			} catch (IOException e) { //TODO be more specific with exception.
-				if (!serverLost) {
-					System.out.println("Sorry i can't reach the server.");
-					this.shutdown();
-					serverLost = true;
-				}
+				byte[] handledPacket = this.packetReceiver.receivePacket();
+				inputHandler.PacketInputHandler(handledPacket);
+			} catch (IOException e) {//TODO handle error
+				e.printStackTrace();
 			}
 		}
 	}
@@ -106,25 +108,8 @@ public class FileServer_ClientSide {
 	 */
 	public void listenLoop(Scanner scan) {
 		Scanner userIn = scan;
-		while (!gameFinished) { 
-			try {
-				Thread.sleep(250);		
-			} catch (InterruptedException e) {
-				//Has slept.
-			}
-			boolean hasInput = false;
-			try {
-				hasInput = System.in.available() > 0;
-			} catch (IOException e) {
-				//Does not have input.
-			}
-			if (shouldAskInput() || hasInput) {
-				showQuestion();
-				if (userIn.hasNext()) {
-					String input = userIn.nextLine();
-					addOutputCommand(input);
-				}
-			}
+		while (!userFinished) { 
+			
 		}
 		userIn.close();
 	}

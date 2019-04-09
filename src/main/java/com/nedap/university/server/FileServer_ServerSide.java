@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.nedap.university.communication.InputHandler;
+import com.nedap.university.communication.PacketReceiver;
+
 public class FileServer_ServerSide {
 
 	//Named constants:
@@ -18,11 +21,15 @@ public class FileServer_ServerSide {
     private List<String> listQuotes = new ArrayList<String>();
     private Random random;
 	private static int serverPort = 8080;
-
+	private boolean finished = false;
+    private PacketReceiver packetReceiver;
+	private InputHandler inputHandler;
 	
 	//Constructors:	
     public FileServer_ServerSide(int port) throws SocketException {
         socket = new DatagramSocket(port);
+		packetReceiver = new PacketReceiver(socket);
+		inputHandler = new InputHandler();
     }
  
     public static void main(String[] args) {
@@ -32,7 +39,7 @@ public class FileServer_ServerSide {
  
         try {
         	FileServer_ServerSide server = new FileServer_ServerSide(serverPort);
-            server.service();
+        	server.clientInput();
         } catch (SocketException ex) {//TODO handle better
             System.out.println("Socket error: " + ex.getMessage());
         } catch (IOException ex) {//TODO handle better
@@ -67,7 +74,7 @@ public class FileServer_ServerSide {
 	 * Command to continuously read out the server input.
 	 * Allowing for simultaneous processing of input, output and internal commands.
 	 */
-	public void serverInput() {
+	public void clientInput() {
 		Thread tsiThread = new Thread() {
 			public void run() {
 				serverConnection();
@@ -83,14 +90,10 @@ public class FileServer_ServerSide {
 	public void serverConnection() {
 		while (!finished) {
 			try {
-				String input = serverIn.readLine();
-				checkCommands(input);
-			} catch (IOException e) { //TODO be more specific with exception.
-				if (!serverLost) {
-					System.out.println("Sorry i can't reach the server.");
-					this.shutdown();
-					serverLost = true;
-				}
+				byte[] handledPacket = this.packetReceiver.receivePacket();
+				inputHandler.PacketInputHandler(handledPacket);
+			} catch (IOException e) {//TODO handle error
+				e.printStackTrace();
 			}
 		}
 	}
