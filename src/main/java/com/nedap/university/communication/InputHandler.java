@@ -8,18 +8,8 @@ package com.nedap.university.communication;
 public class InputHandler {//TODO perhaps better as a method, but is used by both server and client.
 	//Named Constants:
 	private PacketBuilder inputPacket;
-	private int dataSize = 499; //TODO make changeable eventually
-	private int packetSize = 512;//TODO make changeable eventually
-	//Possible flag combinations: TODO check if sufficient
-	private final static int SYN = (int)Integer.valueOf("00000001", 2);;
-	private final static int ACK = (int)Integer.valueOf("00000010", 2);;
-	private final static int FIN = (int)Integer.valueOf("00000100", 2);;
-	private final static int UPLOAD = (byte)(int)Integer.valueOf("00001000", 2);;
-	private final static int DOWNLOAD = (byte)(int)Integer.valueOf("00010000", 2);;
-	private final static int LIST = (byte)(int)Integer.valueOf("00100000", 2);;
-	private final static int PAUSE = (byte)(int)Integer.valueOf("01000000", 2);;
-	private final static int START_STOP = (byte)(int)Integer.valueOf("10000000", 2);
-	
+	private int dataSize = 1011; //TODO make changeable eventually
+	private int packetSize = 1024;//TODO make changeable eventually
 	
 	//Constructors:
 	public InputHandler() {
@@ -43,35 +33,82 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 		int command = (int) inputPacket.getFlags();
 		switch(command) { //TODO add actions
 		case (byte) 1: //SYN
+			
 			break;
 		case (byte) 2: //ACK
+			
 			break;
 		case (byte) 4: //FIN
+			
 			break;
 		case (byte) 8: //UPLOAD
+			
 			break;
 		case (byte) 16: //DOWNLOAD
+			
 			break;
 		case (byte) 32: //LIST
+			
 			break;
 		case (byte) 64: //PAUSE
+			
 			break;
 		case (byte) -128: //START/STOP
+			
 			break;
 		case (byte) 3: //SYN/ACK
+			
+			break;
+		case (byte) 9: //SYN/UPLOAD
+			
+			break;
+		case (byte) 17: //SYN/DOWNLOAD
+			
+			break;
+		case (byte) 33: //SYN/LIST
+					
 			break;
 		case (byte) 6: //ACK/FIN
+			
 			break;
 		case (byte) 10: //ACK/UPLOAD
+			
 			break;
 		case (byte) 18: //ACK/DOWNLOAD
+			
 			break;
 		case (byte) 34: //ACK/LIST
+			
 			break;
 		case (byte) 66: //ACK/PAUSE
+			
 			break;
 		case (byte) -126: //ACK/START_STOP
+			
 			break;
+		case (byte) 5: //SYN/FIN
+			
+			break;
+		case (byte) 12: //FIN/UPLOAD
+			
+			break;
+		case (byte) 20: //FIN/DOWNLOAD
+			
+			break;
+		case (byte) 36: //FIN/LIST
+			
+			break;
+		case (byte) 68: //FIN/PAUSE
+			
+			break;
+		case (byte) -124: //FIN/START_STOp
+			
+			break;
+		case (byte) 0: //no flags set, only used for a broadcast.
+			
+			break;
+		
 		}
+		
 	}
 }
