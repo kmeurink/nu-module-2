@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 import com.nedap.university.communication.PacketReceiver;
 
@@ -26,19 +27,11 @@ public class FileServer_ClientSide {
     public static void main(String[] args) {
 
     	FileServer_ClientSide testClient;
-		try {
-			testClient = new FileServer_ClientSide(clientPortThreaded);//create new instance of class and initialize
-	    	Thread receivingThread = new Thread(new PacketReceiver(testClient.getSocket()));//Create and start receiver thread giving the socket as argument
-	    	receivingThread.start();//TODO perhaps move this thread to filehandler
-		} catch (SocketException e1) { //TODO handle error
-			e1.printStackTrace();
-		}
-
-
         try {//Setup connection with server
 			testClient = new FileServer_ClientSide(clientPort);
-            testClient.broadcastConnect();
-            testClient.service();
+			Scanner scan = new Scanner(System.in);
+            testClient.userInput(scan);
+            testClient.serverInput();
         } catch (SocketException e) { //TODO needs handling
 			e.printStackTrace();
 		} catch (IOException ex) {
@@ -58,68 +51,82 @@ public class FileServer_ClientSide {
     }
     
     //Commands:
+
+    //TODO correctly implement
+    //Example for handling serverinput:
     /**
-     * Broadcasts a packet into the network to find its file server.
-     * @param socket
-     */
-    public void broadcastConnect() { //TODO testing method.
-    	//Status: broadcast is visible on wireshark
-    	
-    	//Test packet with only basic header
-    	byte[] testPacket = new byte[13];
-    	//Seq. number:
-    	testPacket[0] = 0;
-    	testPacket[1] = 0;
-    	testPacket[2] = 0;
-    	testPacket[3] = 1;
-    	//Ack. number:
-    	testPacket[4] = 0;
-    	testPacket[5] = 0;
-    	testPacket[6] = 0;
-    	testPacket[7] = 10;
-    	//Flags and commands:
-    	testPacket[8] = 0;
-    	//Window size:
-    	testPacket[9] = 0;
-    	testPacket[10] = 0;
-    	//Checksum:
-    	testPacket[11] = 0;
-    	testPacket[12] = 0;
-    	
-    	//Broadcast packet to find server.
-    	InetAddress broadcast;
-		try {
-			broadcast = InetAddress.getByName("localhost");//TODO testing using localhost "255.255.255.255");
-			DatagramPacket request = new DatagramPacket(testPacket, 13, broadcast, serverPort);
-				socket.send(request);        
-		} catch (UnknownHostException e) {//TODO handle better
-			e.printStackTrace();
-		} catch (IOException e) {//TODO handle better
-			e.printStackTrace();
+	 * Command to continuously read out the server input.
+	 * Allowing for simultaneous processing of input, output and internal commands.
+	 */
+	public void serverInput() {
+		Thread tsiThread = new Thread() {
+			public void run() {
+				serverConnection();
+			}
+		};
+		tsiThread.start();
+	}
+
+	/**
+	 * Loop for listening to buffered reader in, reading out the server input
+	 * And performing the required actions based on the input.
+	 */
+	public void serverConnection() {
+		while (!finished) {
+			try {
+				String input = serverIn.readLine();
+				checkCommands(input);
+			} catch (IOException e) { //TODO be more specific with exception.
+				if (!serverLost) {
+					System.out.println("Sorry i can't reach the server.");
+					this.shutdown();
+					serverLost = true;
+				}
+			}
 		}
+	}
+	//---------------------------------------------------------------------------------------------------------
+    //Example for handling user input:
+	/**
+	 * Command to continuously read out the user input.
+	 * Allowing for simultaneous processing of input, output and internal commands.
+	 */
+	public void userInput(Scanner scan) {
+		Thread tuiThread = new Thread() {
+			public void run() {
+				listenLoop(scan);
+			}
+		};
+		tuiThread.start();
+	}
 
-    }
-    
-    /**
-     * Class to receive and print all packets during its connection.
-     * @throws IOException
-     */
-    private void service() throws IOException { //TODO rename
-        while (true) {
-        	//Receive packet from client.
-            DatagramPacket request = new DatagramPacket(new byte[13], 13);
-            socket.receive(request);
-            byte[] tempData = request.getData();
-            for (byte i : tempData) {
-                System.out.println(Byte.toString(i)); //TODO for testing.
-
-            }
-            
-            //Get address and port of client from the request.
-            InetAddress clientAddress = request.getAddress();
-            int clientPort = request.getPort();
-
-        }
-    }
-    
+	/**
+	 * Loop for listening to System.in, reading out the user input
+	 * And performing the required actions based on the input.
+	 */
+	public void listenLoop(Scanner scan) {
+		Scanner userIn = scan;
+		while (!gameFinished) { 
+			try {
+				Thread.sleep(250);		
+			} catch (InterruptedException e) {
+				//Has slept.
+			}
+			boolean hasInput = false;
+			try {
+				hasInput = System.in.available() > 0;
+			} catch (IOException e) {
+				//Does not have input.
+			}
+			if (shouldAskInput() || hasInput) {
+				showQuestion();
+				if (userIn.hasNext()) {
+					String input = userIn.nextLine();
+					addOutputCommand(input);
+				}
+			}
+		}
+		userIn.close();
+	}
+	//---------------------------------------------------------------------------------------------------------
 }

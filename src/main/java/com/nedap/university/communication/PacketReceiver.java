@@ -9,7 +9,7 @@ import java.net.InetAddress;
  * @author kester.meurink
  *
  */
-public class PacketReceiver implements Runnable{//TODO perhaps better as a method, but is used by both server and client. Also has to be given the socket to work.
+public class PacketReceiver {//TODO perhaps better as a method, but is used by both server and client. Also has to be given the socket to work.
 	
 	//Named Constants:
 	private DatagramSocket socket;
@@ -25,17 +25,7 @@ public class PacketReceiver implements Runnable{//TODO perhaps better as a metho
 		this.socket = socket;
 		//this.packetData = new byte[512];
 	}
-	
-	//Multithreading commands:
-	public void run() {
-		try {
-			this.receivePacket();
-		} catch (IOException e) { //TODO handle error
-			e.printStackTrace();
-		}
 		
-	}
-	
 	//Queries:
 	/**
 	 * Returns the port of the sender of the last packet.
@@ -60,7 +50,8 @@ public class PacketReceiver implements Runnable{//TODO perhaps better as a metho
      * @throws IOException
      */
     public byte[] receivePacket() throws IOException { //TODO rewrite method, is messy
-       // while (active) { //TODO figure out how to keep receiving, here might not be the best place for the loop.
+    	byte[] packetData;
+    	//while (active) { //TODO figure out how to keep receiving, here might not be the best place for the loop.
         	//Receive packet from client.
             DatagramPacket request = new DatagramPacket(new byte[packetSize], packetSize); //TODO the large packetsize might cause problems for smaller packets when compiling the data together. Need to distinguish useful data.
             socket.receive(request);
@@ -68,7 +59,7 @@ public class PacketReceiver implements Runnable{//TODO perhaps better as a metho
             this.receiverAddress = request.getAddress();
             this.receiverPort = request.getPort();
             int dataLength = request.getLength(); //Determine the actual amount of data
-            byte[] packetData = new byte[dataLength];
+            packetData = new byte[dataLength];
             byte[] totalPacket = new byte[packetSize];
             totalPacket = request.getData();
             for(int i = 0; i < dataLength; i++) { //Loop through the packet and only assign the bytes containing data.

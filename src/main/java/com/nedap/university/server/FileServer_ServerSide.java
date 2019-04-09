@@ -48,53 +48,7 @@ public class FileServer_ServerSide {
 	
 	
 	//Commands:
-     /**
-     * Class to run all required actions during its connection.
-     * @throws IOException
-     */
-    private void service() throws IOException { //TODO rename
-        while (true) {
-        	//Receive packet from client.
-            DatagramPacket request = new DatagramPacket(new byte[13], 13);
-            socket.receive(request);
-            byte[] tempData = request.getData();
-            for (byte i : tempData) {
-                System.out.println(Byte.toString(i)); //TODO for testing.
 
-            }
-            
-            //Get address and port of client from the request.
-            InetAddress clientAddress = request.getAddress();
-            int clientPort = request.getPort();
-            
-          //Test packet with only basic header
-        	byte[] testPacket = new byte[13];
-        	//Seq. number:
-        	testPacket[0] = 0;
-        	testPacket[1] = 0;
-        	testPacket[2] = 0;
-        	testPacket[3] = 6;
-        	//Ack. number:
-        	testPacket[4] = 0;
-        	testPacket[5] = 0;
-        	testPacket[6] = 0;
-        	testPacket[7] = 20;
-        	//Flags and commands:
-        	testPacket[8] = 0;
-        	//Window size:
-        	testPacket[9] = 0;
-        	testPacket[10] = 0;
-        	//Checksum:
-        	testPacket[11] = 0;
-        	testPacket[12] = 0;
-        	
-            //Send packet with chosen data to the client.
-            DatagramPacket response = new DatagramPacket(testPacket, testPacket.length, clientAddress, clientPort);
-            socket.send(response);
-            System.out.println("response sent."); //TODO for testing.
-        }
-    }
- 
     //Load the quotes from a file into a string array.
     //TODO replace by loading a folder.
     private void loadQuotesFromFile(String quoteFile) throws IOException {
@@ -107,7 +61,38 @@ public class FileServer_ServerSide {
  
         reader.close();
     }
- 
+    //TODO correctly implement
+    //Example for handling serverinput:
+    /**
+	 * Command to continuously read out the server input.
+	 * Allowing for simultaneous processing of input, output and internal commands.
+	 */
+	public void serverInput() {
+		Thread tsiThread = new Thread() {
+			public void run() {
+				serverConnection();
+			}
+		};
+		tsiThread.start();
+	}
 
+	/**
+	 * Loop for listening to buffered reader in, reading out the server input
+	 * And performing the required actions based on the input.
+	 */
+	public void serverConnection() {
+		while (!finished) {
+			try {
+				String input = serverIn.readLine();
+				checkCommands(input);
+			} catch (IOException e) { //TODO be more specific with exception.
+				if (!serverLost) {
+					System.out.println("Sorry i can't reach the server.");
+					this.shutdown();
+					serverLost = true;
+				}
+			}
+		}
+	}
 
 }
