@@ -16,18 +16,23 @@ public class PacketReceiver implements Runnable{//TODO perhaps better as a metho
 	private int packetSize = 512;//TODO remove eventually
 	private int receiverPort;
 	private InetAddress receiverAddress;
-	private byte[] packetData;
+	//private byte[] packetData;
 	private boolean active = true;
 	
 	//Constructors:
 	
 	public PacketReceiver(DatagramSocket socket) {
 		this.socket = socket;
-		this.packetData = new byte[512];
+		//this.packetData = new byte[512];
 	}
 	
 	//Multithreading commands:
 	public void run() {
+		try {
+			this.receivePacket();
+		} catch (IOException e) { //TODO handle error
+			e.printStackTrace();
+		}
 		
 	}
 	
@@ -51,25 +56,28 @@ public class PacketReceiver implements Runnable{//TODO perhaps better as a metho
 	
 	//Commands:
 	  /**
-     * Class to receive any packets sent to the socket.
+     * Class to receive any packets sent to the socket and return them.
      * @throws IOException
      */
-    public void receivePacket() throws IOException { //TODO rewrite method, is messy
-        while (active) {
+    public byte[] receivePacket() throws IOException { //TODO rewrite method, is messy
+       // while (active) { //TODO figure out how to keep receiving, here might not be the best place for the loop.
         	//Receive packet from client.
-            DatagramPacket request = new DatagramPacket(new byte[packetSize], packetSize);
+            DatagramPacket request = new DatagramPacket(new byte[packetSize], packetSize); //TODO the large packetsize might cause problems for smaller packets when compiling the data together. Need to distinguish useful data.
             socket.receive(request);
-            this.packetData = request.getData();
-            for (byte i : packetData) {
-                System.out.println(Byte.toString(i)); //TODO for testing.
-
-            }
-            
             //Get address and port of client from the request.
             this.receiverAddress = request.getAddress();
             this.receiverPort = request.getPort();
+            int dataLength = request.getLength(); //Determine the actual amount of data
+            byte[] packetData = new byte[dataLength];
+            byte[] totalPacket = new byte[packetSize];
+            totalPacket = request.getData();
+            for(int i = 0; i < dataLength; i++) { //Loop through the packet and only assign the bytes containing data.
+            	packetData[i] = totalPacket[i];
+            }
+
             //TODO add perhaps a notify that notifies the handler to do something with the received packet.
-        }
+            return packetData;
+        //}
     }
     
     /**
