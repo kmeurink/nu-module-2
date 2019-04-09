@@ -1,19 +1,25 @@
 package com.nedap.university.test;
 
-import static org.junit.jupiter.api.Assertions.*;
+//import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+//import org.junit.jupiter.api.AfterEach;
+//import org.junit.jupiter.api.BeforeEach;
+//import org.junit.jupiter.api.Test;
 
 import com.nedap.university.communication.PacketReceiver;
 
-class PacketReceiverTest {
+public class PacketReceiverTest {
 	private PacketReceiver testReceiver;
 	private DatagramSocket testSocket;
 	private DatagramSocket testSendSocket;
@@ -26,8 +32,8 @@ class PacketReceiverTest {
 	private byte[] testBytePacket;
 
 
-	@BeforeEach
-	void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		testSocket = new DatagramSocket(testPort);
 		testSendSocket = new DatagramSocket(testSendPort);
 		testReceiver = new PacketReceiver(testSocket);
@@ -39,14 +45,14 @@ class PacketReceiverTest {
 
 	}
 
-	@AfterEach
+	@After
 	public void closeUp() {
 		testSocket.close();
 		testSendSocket.close();
 	}
 
 	@Test
-	void testReceivePacket() throws IOException {
+	public void testReceivePacket() throws IOException {
 		testSendSocket.send(sentTestDatagram);
 		byte[] tempData = testReceiver.receivePacket();
 		assertEquals(packetSize, tempData.length);
@@ -55,14 +61,14 @@ class PacketReceiverTest {
 	}
 	
 	@Test
-	void testGetReceiverPort() throws IOException {
+	public void testGetReceiverPort() throws IOException {
 		testSendSocket.send(sentTestDatagram);
 		testReceiver.receivePacket();
 		assertEquals(testSendPort, testReceiver.getReceiverPort());
 	}
 
 	@Test
-	void testGetReceiverAddress() throws IOException {
+	public void testGetReceiverAddress() throws IOException {
 		testSendSocket.send(sentTestDatagram);
 		testReceiver.receivePacket();
 		assertEquals(local, testReceiver.getReceiverAddress());

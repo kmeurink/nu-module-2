@@ -1,22 +1,24 @@
 package com.nedap.university.test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+//import org.junit.jupiter.api.BeforeEach;
+//import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.nedap.university.files.DownUploader;
 import com.nedap.university.files.DownUploaderHandler;
 
-class DownUploaderHandlerTest {
+public class DownUploaderHandlerTest {
 	private DownUploaderHandler fileHandlerTest;
 	DownUploader upload1;
 	DownUploader upload2;
 	DownUploader download1;
 	DownUploader download2;
 	
-	@BeforeEach
-	void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		fileHandlerTest = new DownUploaderHandler();
 		upload1 = new DownUploader();
 		upload2 = new DownUploader();
@@ -25,13 +27,13 @@ class DownUploaderHandlerTest {
 	}
 
 	@Test
-	void testFileHandlerInit() {
+	public void testFileHandlerInit() {
 		assertTrue(fileHandlerTest.getDownloads().isEmpty());
 		assertTrue(fileHandlerTest.getUploads().isEmpty());
 	}
 
 	@Test
-	void testAddDownload() {
+	public void testAddDownload() {
 		fileHandlerTest.addDownload(download1);
 		assertEquals(1, fileHandlerTest.getDownloads().size());
 		fileHandlerTest.addDownload(download2);
@@ -39,7 +41,7 @@ class DownUploaderHandlerTest {
 	}
 
 	@Test
-	void testAddUpload() {
+	public void testAddUpload() {
 		fileHandlerTest.addUpload(upload1);
 		assertEquals(1, fileHandlerTest.getUploads().size());
 		fileHandlerTest.addUpload(upload2);
@@ -47,7 +49,7 @@ class DownUploaderHandlerTest {
 		}
 
 	@Test
-	void testRemoveDownload() {
+	public void testRemoveDownload() {
 		fileHandlerTest.addDownload(download1);
 		assertEquals(1, fileHandlerTest.getDownloads().size());
 		fileHandlerTest.addDownload(download2);
@@ -58,7 +60,7 @@ class DownUploaderHandlerTest {
 	}
 
 	@Test
-	void testRemoveUpload() {
+	public void testRemoveUpload() {
 		fileHandlerTest.addUpload(upload1);
 		assertEquals(1, fileHandlerTest.getUploads().size());
 		fileHandlerTest.addUpload(upload2);

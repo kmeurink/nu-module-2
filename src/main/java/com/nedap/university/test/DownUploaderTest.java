@@ -1,50 +1,53 @@
 package com.nedap.university.test;
 
 import static org.junit.Assert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
+
+//import static org.junit.jupiter.api.Assertions.*;
 import static org.hamcrest.CoreMatchers.*;
 import java.io.FileNotFoundException;
 import java.util.List;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
+//import org.junit.jupiter.api.BeforeEach;
+//import org.junit.jupiter.api.Test;
 
 import com.nedap.university.files.DownUploader;
 
-class DownUploaderTest {
+public class DownUploaderTest {
 	private DownUploader downUpTest;
 	private String testName = "testFile.txt";
 	private byte[] dataPart1;
 	private byte[] dataPart2;
 
-	@BeforeEach
-	void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		downUpTest = new DownUploader();
 		dataPart1 = new byte[499];
 		dataPart2 = new byte[499];
 	}
 
 	@Test
-	void testDownUploaderInit() {
+	public void testDownUploaderInit() {
 		assertTrue(downUpTest.sendData().isEmpty());
 	}
 
 	@Test
-	void testSetGetName() {
+	public void testSetGetName() {
 		downUpTest.setName("test.txt");
 		assertEquals("test.txt", downUpTest.getName());
 		
 	}
 
 	@Test
-	void testSetGetSize() {
+	public void testSetGetSize() {
 		assertEquals(0, downUpTest.getSize());
 		downUpTest.setSize(10);
 		assertEquals(10, downUpTest.getSize());
 	}
 
 	@Test
-	void testAddData() {
+	public void testAddData() {
 		assertEquals(0,downUpTest.determineSize());
 		downUpTest.addData(dataPart1);
 		assertEquals(499,downUpTest.determineSize());
@@ -53,13 +56,13 @@ class DownUploaderTest {
 	}
 	
 	@Test
-	void testReadOutFile() {
+	public void testReadOutFile() {
 		downUpTest.readOutFile("src/main/java/com/nedap/university/test/testFile.txt");
 		assertEquals(3, downUpTest.sendData().size());
 	}
 
 	@Test
-	void testFinishFiletxt() {
+	public void testFinishFiletxt() {
 		downUpTest.readOutFile("src/main/java/com/nedap/university/test/testFile.txt");
 		List<byte[]> tempFilepre = downUpTest.sendData();
 		downUpTest.setName("src/main/java/com/nedap/university/test/testFile2.txt");
@@ -72,7 +75,7 @@ class DownUploaderTest {
 	}
 	
 	@Test
-	void testFinishFilepdf() {
+	public void testFinishFilepdf() {
 		downUpTest.readOutFile("src/main/java/com/nedap/university/test/ns-2019-col4.pdf");
 		List<byte[]> tempFilepre = downUpTest.sendData();
 		downUpTest.setName("src/main/java/com/nedap/university/test/ns-2019-col4copy.pdf");
@@ -85,21 +88,21 @@ class DownUploaderTest {
 	}
 
 	@Test
-	void testSendDataSingle() {
+	public void testSendDataSingle() {
 		downUpTest.readOutFile("src/main/java/com/nedap/university/test/testFile.txt");
 		byte[] dateBlock= {115, 46};
 		assertEquals(dateBlock[0],downUpTest.sendDataSingle(2)[0]);
 		assertEquals(dateBlock[1],downUpTest.sendDataSingle(2)[1]);
 	}
-
+/*
 	@Test
-	void testSetSeqNumber() {
+	public void testSetSeqNumber() {
 		fail("Not yet implemented");
 	}
 
 	@Test
-	void testSetAckNumber() {
+	public void testSetAckNumber() {
 		fail("Not yet implemented");
 	}
-
+*/
 }

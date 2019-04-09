@@ -148,7 +148,7 @@ public class PacketBuilderTest {
 		testBuilder.setCheckSum(checkSum2);
 		assertArrayEquals(checkSum2Bytes, testBuilder.getCheckSum());
 	}
-
+/*
 	@Test
 	public void testSetHeader() {
 		fail("Not yet implemented");
@@ -163,4 +163,5 @@ public class PacketBuilderTest {
 	public void testSetPacket() {
 		fail("Not yet implemented");
 	}
+	*/
 }
