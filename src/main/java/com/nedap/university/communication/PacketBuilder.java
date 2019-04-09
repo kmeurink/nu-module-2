@@ -27,7 +27,7 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	public PacketBuilder(int dataSize, int packetSize) {
 		this.dataSize = dataSize;
 		this.packetSize = packetSize;
-		this.packetHeaderArray = new byte[headerSize];
+		this.packetHeaderArray = new byte[packetSize - dataSize];
 		this.packetDataArray = new byte[dataSize];
 		this.packetArrayTotal = new byte[packetSize];
 	}
@@ -54,7 +54,7 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	public byte[] getAckNumber() {
 		byte[] ackNumberArray = new byte[4];
 		for (int i = 4; i < 8; i++) {
-			ackNumberArray[i] = this.packetArrayTotal[i];
+			ackNumberArray[i - 4] = this.packetArrayTotal[i];
 		}
 		
 		return ackNumberArray;		
@@ -74,7 +74,9 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public byte[] getWindowSize() {
 		byte[] windowSizeArray = new byte[2];
-		
+		for (int i = 9; i < 11; i++) {
+			windowSizeArray[i - 9] = this.packetArrayTotal[i];
+		}
 		return windowSizeArray;
 	}
 	
@@ -84,7 +86,9 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public byte[] getCheckSum() {
 		byte[] checksumArray = new byte[2];
-		
+		for (int i = 11; i < 13; i++) {
+			checksumArray[i - 11] = this.packetArrayTotal[i];
+		}
 		return checksumArray;		
 	}
 	
@@ -121,13 +125,13 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public void setSeqNumber(int sequenceNumber) {
 		int temp = sequenceNumber & bitMaskShift;
-		packetArrayTotal[0] = (byte) temp;
+		packetArrayTotal[3] = (byte) temp;
 		temp = sequenceNumber >> bitwiseShift8 & bitMaskShift;
-		packetArrayTotal[1] = (byte) temp;
-		temp = sequenceNumber >> bitwiseShift16 & bitMaskShift;
 		packetArrayTotal[2] = (byte) temp;
+		temp = sequenceNumber >> bitwiseShift16 & bitMaskShift;
+		packetArrayTotal[1] = (byte) temp;
 		temp = sequenceNumber >> bitwiseShift24 & bitMaskShift;
-		packetArrayTotal[3] = (byte) temp; 
+		packetArrayTotal[0] = (byte) temp; 
 	}
 	
 	/**
@@ -136,13 +140,13 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public void setAckNumber(int ackNumber) {
 		int temp = ackNumber & bitMaskShift;
-		packetArrayTotal[4] = (byte) temp;
-		temp = ackNumber >> bitwiseShift8 & bitMaskShift;
-		packetArrayTotal[5] = (byte) temp;
-		temp = ackNumber >> bitwiseShift16 & bitMaskShift;
-		packetArrayTotal[6] = (byte) temp;
-		temp = ackNumber >> bitwiseShift24 & bitMaskShift;
 		packetArrayTotal[7] = (byte) temp;
+		temp = ackNumber >> bitwiseShift8 & bitMaskShift;
+		packetArrayTotal[6] = (byte) temp;
+		temp = ackNumber >> bitwiseShift16 & bitMaskShift;
+		packetArrayTotal[5] = (byte) temp;
+		temp = ackNumber >> bitwiseShift24 & bitMaskShift;
+		packetArrayTotal[4] = (byte) temp;
 	}
 	
 	/**
@@ -159,9 +163,9 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public void setWindowSize(int window) {//TODO might also become data size, i dont know if window size needs to be changed.
 		int temp = window & bitMaskShift;
-		packetArrayTotal[9] = (byte) temp;
-		temp = window >> bitwiseShift8 & bitMaskShift;
 		packetArrayTotal[10] = (byte) temp;
+		temp = window >> bitwiseShift8 & bitMaskShift;
+		packetArrayTotal[9] = (byte) temp;
 	}
 	
 	/**
@@ -170,9 +174,9 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public void setCheckSum(int checkSum) {
 		int temp = checkSum & bitMaskShift;
-		packetArrayTotal[11] = (byte) temp;
-		temp = checkSum >> bitwiseShift8 & bitMaskShift;
 		packetArrayTotal[12] = (byte) temp;
+		temp = checkSum >> bitwiseShift8 & bitMaskShift;
+		packetArrayTotal[11] = (byte) temp;
 	}
 	
 	/**
