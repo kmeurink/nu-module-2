@@ -24,7 +24,7 @@ public class FileServer_ClientSide {
 	private InputHandler inputHandler;
     
 	//Constructors:
-    public FileServer_ClientSide(int port) throws SocketException {
+    public FileServer_ClientSide(int port) throws SocketException, UnknownHostException {
     	socket = new DatagramSocket(port);
 		packetReceiver = new PacketReceiver(socket);
 		inputHandler = new InputHandler();
@@ -81,7 +81,7 @@ public class FileServer_ClientSide {
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
-				inputHandler.PacketInputHandler(handledPacket);
+				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), this.packetReceiver.getReceiverPort());
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();
 			}
@@ -105,13 +105,54 @@ public class FileServer_ClientSide {
 	/**
 	 * Loop for listening to System.in, reading out the user input
 	 * And performing the required actions based on the input.
+	 * @throws InterruptedException 
 	 */
 	public void listenLoop(Scanner scan) {
 		Scanner userIn = scan;
 		while (!userFinished) { 
-			
+			printTUI();
+			handleInput(userIn.nextLine());
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		userIn.close();
 	}
+	
+	/**
+	 * Prints out the elements of the textual user interface.
+	 */
+	private void printTUI() {
+		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
+		System.out.println("Welcome to this fileServer, please type a number corresponding to one of the oftions below");
+		System.out.println("1 : Connect to server.");
+		System.out.println("2 : List the available files on the server.");
+		System.out.println("3 : Download a file from the server.");
+		System.out.println("4 : Upload a file to the server.");
+		System.out.println("5 : Show the statistics of the server connection.");
+		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
+	}
+	
+	/**
+	 * Temporary handling of user input.
+	 * @param input
+	 */
+	private void handleInput(String input) { //TODO actually handle the input, probably better to do in another class?
+		if (input.equals("1")) {
+			System.out.println("Sorry this command has not yet been implemented.");
+		} else if (input.equals("2")) {
+			System.out.println("Sorry this command has not yet been implemented.");
+		} else if (input.equals("3")) {
+			System.out.println("Sorry this command has not yet been implemented.");
+		} else if (input.equals("4")) {
+			System.out.println("Sorry this command has not yet been implemented.");
+		} else if (input.equals("5")) {
+			System.out.println("Sorry this command has not yet been implemented.");
+		}
+	}
+	
 	//---------------------------------------------------------------------------------------------------------
 }
