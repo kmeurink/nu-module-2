@@ -17,24 +17,32 @@ public class FileServer_ClientSide {
 	private static int clientPort = 8090;//TODO add way for client to set own port.
 	private static int clientPortThreaded = 8099;//TODO add way for client to set own port.
 	private static int serverPort = 8080;
+	private InetAddress BROADCASTaddress = InetAddress.getByName("255.255.255.255");
+	private byte[] broadcastPacket= new byte[0];
+	public DatagramPacket broadcast = new DatagramPacket(broadcastPacket, 0, BROADCASTaddress, serverPort);
+	public DatagramPacket broadcastACK;
+    public DatagramSocket socket = new DatagramSocket(clientPort);
+	private InetAddress serverAddress;
 	private boolean finished = false;
 	private boolean userFinished = false;
-    private DatagramSocket socket;
     private PacketReceiver packetReceiver;
 	private InputHandler inputHandler;
     
 	//Constructors:
-    public FileServer_ClientSide(int port) throws SocketException, UnknownHostException {
-    	socket = new DatagramSocket(port);
+    public FileServer_ClientSide() throws SocketException, UnknownHostException {
 		packetReceiver = new PacketReceiver(socket);
-		inputHandler = new InputHandler();
+		this.serverAddress = InetAddress.getByName("localhost");//TODO for testing
+		inputHandler = new InputHandler(socket, serverAddress, serverPort); //TODO create method to set them, instead of on boot?
     }
     
     public static void main(String[] args) {
-
     	FileServer_ClientSide testClient;
         try {//Setup connection with server
-			testClient = new FileServer_ClientSide(clientPort);
+			testClient = new FileServer_ClientSide();
+			//TODO Send broadcast until server responds back.
+			testClient.socket.send(testClient.broadcast);
+			testClient.socket.receive(testClient.broadcastACK);
+			
 			Scanner scan = new Scanner(System.in);
             testClient.userInput(scan);
             testClient.serverInput();
@@ -81,6 +89,7 @@ public class FileServer_ClientSide {
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
+				System.out.println("Packet received from server");
 				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), this.packetReceiver.getReceiverPort());
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();
@@ -137,14 +146,15 @@ public class FileServer_ClientSide {
 	}
 	
 	/**
-	 * Temporary handling of user input.
+	 * Handling of user input.
 	 * @param input
 	 */
-	private void handleInput(String input) { //TODO actually handle the input, probably better to do in another class?
-		if (input.equals("1")) {
+	private void handleInput(String input) { //TODO actually handle the input, possibly better to do in another class?
+		if (input.equals("1")) { //TODO make connection before starting everything. So automatic.
 			System.out.println("Sorry this command has not yet been implemented.");
 		} else if (input.equals("2")) {
-			System.out.println("Sorry this command has not yet been implemented.");
+			//System.out.println("Sorry this command has not yet been implemented.");
+			this.inputHandler.getList();
 		} else if (input.equals("3")) {
 			System.out.println("Sorry this command has not yet been implemented.");
 		} else if (input.equals("4")) {
