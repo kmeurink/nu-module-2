@@ -5,24 +5,49 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 /**
  * Sends the packets to the server or client.
  * @author kester.meurink
  *
  */
-public class PacketSender { //TODO perhaps better as a method, but is used by both server and client. Also has to be given the socket to work.
+public class PacketSender extends Thread{ //TODO perhaps better as a method, but is used by both server and client. Also has to be given the socket to work.
 	//Named Constants:
     private DatagramSocket socket;
     public static InetAddress BROADCAST;
     private InetAddress serverAddress;
     private DatagramPacket packetToSend;
+    private BlockingQueue sendingQueue;
+    private int queueLength = 1000;
+    private boolean running = true;
+    private InetAddress sendingAddress;
+    private int sendingPort;
 	
 	//Constructors:
-	public PacketSender(DatagramSocket socket) throws UnknownHostException {
+	public PacketSender(DatagramSocket socket, InetAddress address, int port) throws UnknownHostException {
+		this.sendingQueue = new ArrayBlockingQueue(queueLength);
 		this.socket = socket;
-		this.BROADCAST = InetAddress.getByName("255.255.255.255");
+		this.BROADCAST = InetAddress.getByName("255.255.255.255"); //TODO not neccessary here.
+		this.sendingAddress = address;
+		this.sendingPort = port;
 	}
-		
+	
+	public void run() {
+		while(running) {
+			if (!sendingQueue.isEmpty()) {
+				try {
+					sendPacket((DatagramPacket) sendingQueue.take());
+					System.out.println("Sending packet");
+				} catch (InterruptedException e) {
+					// TODO handle error
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	
 	//Queries:
 	
 	/**
@@ -41,9 +66,9 @@ public class PacketSender { //TODO perhaps better as a method, but is used by bo
 	 * @param receiver
 	 * @param receiverPort
 	 */
-	public void buildDatagram(InetAddress receiver, int receiverPort, byte[] packet) {
+	public DatagramPacket buildDatagram(InetAddress receiver, int receiverPort, byte[] packet) {
 		packetToSend = new DatagramPacket(packet, packet.length, receiver, receiverPort);
-		
+		return packetToSend;
 	}
 	
 	/**
@@ -57,4 +82,21 @@ public class PacketSender { //TODO perhaps better as a method, but is used by bo
 			e.printStackTrace();
 		}
 	}
+	
+	/**
+	 * Adds a list of packets to the queue or a single one depending on the argument given.
+	 * @param list
+	 */
+	public void addToQueue(List<byte[]> list) {//TODO check for errors
+		for(byte[] i : list) {
+			this.sendingQueue.add(buildDatagram(this.sendingAddress, this.sendingPort, i));
+		}
+	}	
+
+	
+	public void addToQueue(byte[] array) {
+		this.sendingQueue.add(buildDatagram(this.sendingAddress, this.sendingPort, array));
+
+	}
+	
 }
