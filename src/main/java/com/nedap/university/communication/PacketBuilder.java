@@ -235,7 +235,10 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * @return
 	 */
 	public byte[] calculateCheckSum(byte[] file) { //TODO implemente calculations
-		return null;
+		byte[] tempCRC = new byte[2];
+		tempCRC[0] = 0;
+		tempCRC[1] = 0;
+		return tempCRC;
 	}
 	
 	/**
@@ -265,6 +268,24 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	public void setPacket(byte[] total) {
 		for (int i = 0; i < this.packetArrayTotal.length; i++) {
 			packetArrayTotal[i] = total[i];
+		}
+	}
+	
+	/**
+	 * Clear the contents of the header.
+	 */
+	public void clearHeader() { //TODO check if this works
+		for(int i = 0; i < this.packetHeaderArray.length; i++) {
+			packetArrayTotal[i] = 0;
+		}		
+	}
+	
+	/**
+	 * Clear the contents of the data.
+	 */
+	public void clearData() { //TODO check if this works
+		for (int i = this.packetHeaderArray.length; i < this.packetArrayTotal.length; i++) {
+			packetArrayTotal[i] = 0;
 		}
 	}
 	
