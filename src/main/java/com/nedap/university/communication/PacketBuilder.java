@@ -7,8 +7,19 @@ import java.util.Arrays;
  * @author kester.meurink
  *
  */
+//TODO use clone in get functions to prevent linked array issues? Currently implemented see how it turns out
 public class PacketBuilder { //TODO Should have methods to change the header, add data to the end and provide current settings.
 	//Named Constants:
+	private int fileNumberStartIndex = 0;
+	private int seqStartIndex = 2;
+	private int ackStartIndex = 6;
+	private int flagStartIndex = 10;
+	private int commandsStartIndex = 11;
+	private int windowStartIndex = 12;
+	private int checksumStartIndex = 14;
+	private int endIndex = 16;
+	
+	
 	//Bitwise operator constants:
 	private int bitwiseShift24 = 24;
 	private int bitwiseShift16 = 16;
@@ -19,13 +30,11 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	private byte[] packetHeaderArray;
 	private byte[] packetDataArray;
 	private byte[] packetArrayTotal;
-	private int headerSize = 13;
-	private int dataSize = 499; //TODO remove eventually
-	private int packetSize = 512;//TODO remove eventually
+	private int headerSize = 16;
+	private int packetSize = 1024;//TODO remove eventually
 	
 	//Constructors:
 	public PacketBuilder(int dataSize, int packetSize) {
-		this.dataSize = dataSize;
 		this.packetSize = packetSize;
 		this.packetHeaderArray = new byte[packetSize - dataSize];
 		this.packetDataArray = new byte[dataSize];
@@ -33,6 +42,19 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	}
 	
 	//Queries:
+	
+	/**
+	 * Returns the fileNumber as an array of bytes.
+	 * @return
+	 */
+	public byte[] getFileNumber() {
+		byte[] fileNumberArray = new byte[2];
+		for (int i = fileNumberStartIndex; i < seqStartIndex; i++) {
+			fileNumberArray[i - fileNumberStartIndex] = this.packetArrayTotal.clone()[i];
+		}
+		return fileNumberArray;
+	}
+	
 	/**
 	 * Returns the seqNumber as an array of bytes.
 	 * @param i
@@ -40,8 +62,8 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public byte[] getSeqNumber() {
 		byte[] seqNumberArray = new byte[4];
-		for (int i = 0; i < 4; i++) {
-			seqNumberArray[i] = this.packetArrayTotal[i];
+		for (int i = seqStartIndex; i < ackStartIndex; i++) {
+			seqNumberArray[i - seqStartIndex] = this.packetArrayTotal.clone()[i];
 		}
 		
 		return seqNumberArray;
@@ -53,8 +75,8 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public byte[] getAckNumber() {
 		byte[] ackNumberArray = new byte[4];
-		for (int i = 4; i < 8; i++) {
-			ackNumberArray[i - 4] = this.packetArrayTotal[i];
+		for (int i = ackStartIndex; i < flagStartIndex; i++) {
+			ackNumberArray[i - ackStartIndex] = this.packetArrayTotal.clone()[i];
 		}
 		
 		return ackNumberArray;		
@@ -65,7 +87,15 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * @return
 	 */
 	public byte getFlags() {
-		return packetArrayTotal[8];
+		return packetArrayTotal.clone()[flagStartIndex];
+	}
+	
+	/**
+	 * Returns the commands set in the packet header.
+	 * @return
+	 */
+	public byte getCommands() {
+		return packetArrayTotal.clone()[commandsStartIndex];
 	}
 	
 	/**
@@ -74,8 +104,8 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public byte[] getWindowSize() {
 		byte[] windowSizeArray = new byte[2];
-		for (int i = 9; i < 11; i++) {
-			windowSizeArray[i - 9] = this.packetArrayTotal[i];
+		for (int i = windowStartIndex; i < checksumStartIndex; i++) {
+			windowSizeArray[i - windowStartIndex] = this.packetArrayTotal.clone()[i];
 		}
 		return windowSizeArray;
 	}
@@ -86,8 +116,8 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public byte[] getCheckSum() {
 		byte[] checksumArray = new byte[2];
-		for (int i = 11; i < 13; i++) {
-			checksumArray[i - 11] = this.packetArrayTotal[i];
+		for (int i = checksumStartIndex; i < endIndex; i++) {
+			checksumArray[i - checksumStartIndex] = this.packetArrayTotal.clone()[i];
 		}
 		return checksumArray;		
 	}
@@ -97,7 +127,7 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * @return
 	 */
 	public byte[] getHeader() {
-		this.packetHeaderArray = Arrays.copyOfRange(this.packetArrayTotal,0,this.headerSize);
+		this.packetHeaderArray = Arrays.copyOfRange(this.packetArrayTotal.clone(),0,this.headerSize);
 		return this.packetHeaderArray;
 	}
 	
@@ -106,7 +136,7 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * @return
 	 */
 	public byte[] getData() {
-		this.packetDataArray = Arrays.copyOfRange(this.packetArrayTotal,this.headerSize,this.packetSize);
+		this.packetDataArray = Arrays.copyOfRange(this.packetArrayTotal.clone(),this.headerSize,this.packetSize);
 		return this.packetDataArray;
 	}
 	
@@ -115,23 +145,35 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * @return
 	 */
 	public byte[] getPacket() {
-		return this.packetArrayTotal;
+		return this.packetArrayTotal.clone();
 	}
 	
 	//Commands:
+	
+	/**
+	 * Sets the file identification number
+	 * @param number
+	 */
+	public void setFileNumber(short number) {
+		int temp = number & bitMaskShift;
+		packetArrayTotal[fileNumberStartIndex+1] = (byte) temp;
+		temp = number >> bitwiseShift8 & bitMaskShift;
+		packetArrayTotal[fileNumberStartIndex] = (byte) temp;
+		}
+	
 	/**
 	 * Sets a new sequence number in the header.
 	 * @param sequenceNumber
 	 */
 	public void setSeqNumber(int sequenceNumber) {
 		int temp = sequenceNumber & bitMaskShift;
-		packetArrayTotal[3] = (byte) temp;
+		packetArrayTotal[this.seqStartIndex + 3] = (byte) temp;
 		temp = sequenceNumber >> bitwiseShift8 & bitMaskShift;
-		packetArrayTotal[2] = (byte) temp;
+		packetArrayTotal[this.seqStartIndex + 2] = (byte) temp;
 		temp = sequenceNumber >> bitwiseShift16 & bitMaskShift;
-		packetArrayTotal[1] = (byte) temp;
+		packetArrayTotal[this.seqStartIndex + 1] = (byte) temp;
 		temp = sequenceNumber >> bitwiseShift24 & bitMaskShift;
-		packetArrayTotal[0] = (byte) temp; 
+		packetArrayTotal[this.seqStartIndex] = (byte) temp; 
 	}
 	
 	/**
@@ -140,13 +182,13 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public void setAckNumber(int ackNumber) {
 		int temp = ackNumber & bitMaskShift;
-		packetArrayTotal[7] = (byte) temp;
+		packetArrayTotal[this.ackStartIndex + 3] = (byte) temp;
 		temp = ackNumber >> bitwiseShift8 & bitMaskShift;
-		packetArrayTotal[6] = (byte) temp;
+		packetArrayTotal[this.ackStartIndex + 2] = (byte) temp;
 		temp = ackNumber >> bitwiseShift16 & bitMaskShift;
-		packetArrayTotal[5] = (byte) temp;
+		packetArrayTotal[this.ackStartIndex + 1] = (byte) temp;
 		temp = ackNumber >> bitwiseShift24 & bitMaskShift;
-		packetArrayTotal[4] = (byte) temp;
+		packetArrayTotal[this.ackStartIndex] = (byte) temp;
 	}
 	
 	/**
@@ -154,7 +196,15 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * @param flags
 	 */
 	public void setFlags(byte flags) {
-		packetArrayTotal[8] = flags;
+		packetArrayTotal[this.flagStartIndex] = flags;
+	}
+	
+	/**
+	 * Sets the command bits in the header.
+	 * @param commands
+	 */
+	public void setCommands(byte commands) {
+		packetArrayTotal[this.commandsStartIndex] = commands;
 	}
 
 	/**
@@ -163,20 +213,29 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public void setWindowSize(int window) {//TODO might also become data size, i dont know if window size needs to be changed.
 		int temp = window & bitMaskShift;
-		packetArrayTotal[10] = (byte) temp;
+		packetArrayTotal[this.windowStartIndex + 1] = (byte) temp;
 		temp = window >> bitwiseShift8 & bitMaskShift;
-		packetArrayTotal[9] = (byte) temp;
+		packetArrayTotal[this.windowStartIndex] = (byte) temp;
 	}
 	
 	/**
 	 * Sets the checksum in the header.
 	 * @param checkSum
 	 */
-	public void setCheckSum(int checkSum) {
+	public void setCheckSum(short checkSum) {
 		int temp = checkSum & bitMaskShift;
-		packetArrayTotal[12] = (byte) temp;
+		packetArrayTotal[this.checksumStartIndex + 1] = (byte) temp;
 		temp = checkSum >> bitwiseShift8 & bitMaskShift;
-		packetArrayTotal[11] = (byte) temp;
+		packetArrayTotal[this.checksumStartIndex] = (byte) temp;
+	}
+	
+	/**
+	 * Calculates the checksum of a file.
+	 * @param file
+	 * @return
+	 */
+	public byte[] calculateCheckSum(byte[] file) { //TODO implemente calculations
+		return null;
 	}
 	
 	/**
