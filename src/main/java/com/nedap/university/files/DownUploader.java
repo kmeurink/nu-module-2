@@ -26,6 +26,8 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	private byte[] packetDataSize = new byte[standardFormat]; //TODO be able to set this size.
 	private int lastPacketSize = 0;
 	private boolean download = true;
+	private int seqNumber;
+	private int ackNumber;
 	
 	//Constructors:
 	public DownUploader() { //TODO make multithreaded?
@@ -191,13 +193,13 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	 * Sets the sequence number of this specific download/upload.
 	 */
 	public void setSeqNumber(int seq) {
-		
+		this.seqNumber = seq;
 	}
 	
 	/**
 	 * Sets the acknowledgement number of this specific download/upload.
 	 */
 	public void setAckNumber(int ack) {
-		
+		this.ackNumber = ack;
 	}
 }

@@ -11,10 +11,17 @@ import com.nedap.university.communication.PacketBuilder;
 
 public class PacketBuilderTest {
 	private PacketBuilder testBuilder;
-	private int dataLength = 499;
-	private int packetLength = 512;
+	private int packetLength = 1024;
+	private int headerSize = 16;
+	private int dataLength = packetLength - headerSize;
 	private byte testEmptyFlags = 0;
+	private byte testEmptyCommands = 0;
 	//Test variables:
+	private short testFileNumber1 = 126;
+	private byte[] testFileNumber1Bytes = ByteBuffer.allocate(2).putShort(testFileNumber1).array();
+	private short testFileNumber2 = 31054;
+	private byte[] testFileNumber2Bytes = ByteBuffer.allocate(2).putShort(testFileNumber2).array();
+	
 	int seqAckTest1 = 126;
 	byte[] seqAckTest1Bytes = ByteBuffer.allocate(4).putInt(seqAckTest1).array();
 	int seqAckTest2 = 31458;
@@ -26,6 +33,8 @@ public class PacketBuilderTest {
 	
 	private byte testFlagAck = (byte) 2;
 	private byte testFlagAckDown = (byte) 16;
+	private byte testCommand1 = (byte) 41;
+	private byte testCommand2 = (byte) 4;
 	
 	private short window1 = 150;
 	private byte[] window1Bytes = ByteBuffer.allocate(2).putShort(window1).array();;
@@ -45,11 +54,11 @@ public class PacketBuilderTest {
 
 	@Test
 	public void testPacketBuilderInit() {
-		assertEquals(13, testBuilder.getHeader().length);
+		assertEquals(headerSize, testBuilder.getHeader().length);
 		assertTrue(this.checkContents((byte) 0, testBuilder.getHeader()));
-		assertEquals(499, testBuilder.getData().length);
+		assertEquals(dataLength, testBuilder.getData().length);
 		assertTrue(this.checkContents((byte) 0, testBuilder.getData()));
-		assertEquals(512, testBuilder.getPacket().length);
+		assertEquals(packetLength, testBuilder.getPacket().length);
 		assertTrue(this.checkContents((byte) 0, testBuilder.getPacket()));
 
 	}
@@ -70,6 +79,12 @@ public class PacketBuilderTest {
 	
 	//First testing the queries:
 	@Test
+	public void testGetFileNumber() {
+		assertEquals(2, testBuilder.getFileNumber().length);
+		assertTrue(this.checkContents((byte) 0, testBuilder.getFileNumber()));
+	}
+	
+	@Test
 	public void testGetSeqNumber() {
 		assertEquals(4, testBuilder.getSeqNumber().length);
 		assertTrue(this.checkContents((byte) 0, testBuilder.getSeqNumber()));
@@ -85,6 +100,11 @@ public class PacketBuilderTest {
 	public void testGetFlags() {
 		assertEquals(testEmptyFlags, testBuilder.getFlags());
 	}
+	
+	@Test
+	public void testGetCommands() {
+		assertEquals(testEmptyCommands, testBuilder.getCommands());
+	}
 
 	@Test
 	public void testGetWindowSize() {
@@ -98,7 +118,17 @@ public class PacketBuilderTest {
 		assertTrue(this.checkContents((byte) 0, testBuilder.getCheckSum()));
 	}
 
+	
+	
 	//Now testing the commands:
+	
+	@Test
+	public void testSetFileNumber() {
+		testBuilder.setFileNumber(testFileNumber1);
+		assertArrayEquals(this.testFileNumber1Bytes, testBuilder.getFileNumber());
+		testBuilder.setFileNumber(testFileNumber2);
+		assertArrayEquals(this.testFileNumber2Bytes, testBuilder.getFileNumber());
+	}
 	
 	@Test
 	public void testSetSeqNumber() {
@@ -133,6 +163,14 @@ public class PacketBuilderTest {
 		assertEquals(this.testFlagAckDown, testBuilder.getFlags());
 	}
 
+	@Test
+	public void testSetCommands() {
+		testBuilder.setCommands(testCommand1);
+		assertEquals(this.testCommand1, testBuilder.getCommands());
+		testBuilder.setCommands(testCommand2);
+		assertEquals(this.testCommand2, testBuilder.getCommands());
+	}
+	
 	@Test
 	public void testSetWindowSize() {
 		testBuilder.setWindowSize(window1);

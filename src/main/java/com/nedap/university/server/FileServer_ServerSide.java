@@ -7,6 +7,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -22,14 +23,17 @@ public class FileServer_ServerSide {
     private Random random;
 	private static int serverPort = 8080;
 	private boolean finished = false;
+	private InetAddress clientAddress;
+	private int clientPort = 8090;
     private PacketReceiver packetReceiver;
 	private InputHandler inputHandler;
 	
 	//Constructors:	
-    public FileServer_ServerSide(int port) throws SocketException {
+    public FileServer_ServerSide(int port) throws SocketException, UnknownHostException {
         socket = new DatagramSocket(port);
 		packetReceiver = new PacketReceiver(socket);
-		inputHandler = new InputHandler();
+		this.clientAddress = InetAddress.getByName("localhost");//TODO for testing
+		inputHandler = new InputHandler(socket, clientAddress, clientPort);
     }
  
     public static void main(String[] args) {
@@ -91,7 +95,8 @@ public class FileServer_ServerSide {
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
-				inputHandler.PacketInputHandler(handledPacket);
+				System.out.println("Packet received from client");
+				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), this.packetReceiver.getReceiverPort());
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();
 			}
