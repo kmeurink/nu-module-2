@@ -85,11 +85,11 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 			data = commands.listAcknowledgement();
 			packetSender.addToQueue(data);
 			break;
-		case (byte) 39: //SYN/LIST/ACK/FIN
+		case (byte) 39: //SYN/LIST/ACK/FIN //TODO the packet it is receiving does not have any contents, where did it go?
 			System.out.println("Command tree: SYN/LIST/ACK/FIN");
     		//TODO collect last piece of data and add together to print out list given
 			this.fileNameHandler.addToList(inputPacket.getData());
-			this.fileNameHandler.compileList();;
+			this.fileNameHandler.compileList();
 			data = commands.listFinalAcknowledgement();
 			packetSender.addToQueue(data);
 			break;
@@ -182,10 +182,12 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
        private List<byte[]> nameListByte = new ArrayList<byte[]>();
        
        public void addToList(byte[] fileNames) {
+    	   System.out.println("Adding files to list. " +  Thread.currentThread());
     	   this.nameListByte.add(fileNames);
        }
        
        public void compileList() {
+    	   System.out.println("Compiling list. " +  Thread.currentThread());
            	String concat =",";
 	        //This is assuming all bytes have been received, so all bytes must be collected first before translating back to string. listFinalAcknowledgement method
 	        int byteLengthNames = 0;

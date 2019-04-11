@@ -37,7 +37,7 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	public PacketBuilder(int headSize, int packetSize) {
 		this.packetSize = packetSize;
 		this.packetHeaderArray = new byte[headSize];
-		this.packetDataArray = new byte[packetSize - headerSize];
+		this.packetDataArray = new byte[packetSize - headSize];
 		this.packetArrayTotal = new byte[packetSize];
 	}
 	
@@ -256,8 +256,8 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * @param data
 	 */
 	public void setData(byte[] data) {
-		for (int i = this.packetHeaderArray.length; i < data.length; i++) {
-			packetArrayTotal[i] = data[i];
+		for (int i = this.packetHeaderArray.length; i < (data.length + this.packetHeaderArray.length - 1); i++) {
+			packetArrayTotal[i] = data[i - this.packetHeaderArray.length];
 		}
 	}
 	

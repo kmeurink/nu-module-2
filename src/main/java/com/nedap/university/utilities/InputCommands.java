@@ -12,13 +12,13 @@ public class InputCommands {
 	private PacketBuilder headerConstructor;
 	private String directory = "C:/Users/kester.meurink/Nedap university/module 2/assignment/";
 	private List<byte[]> packetsToSend;
-	private int dataSize = 1011; //TODO make changeable eventually
+	private int headerSize = 16; //TODO make changeable eventually
 	private int packetSize = 1024;//TODO make changeable eventually
 	private byte[] replyPacket; 
 	
 	//Constructors:
 	public InputCommands() {
-		this.headerConstructor = new PacketBuilder(dataSize, packetSize);
+		this.headerConstructor = new PacketBuilder(headerSize, packetSize);
 		packetsToSend = new ArrayList<byte[]>();
 	}
 	
@@ -42,7 +42,7 @@ public class InputCommands {
         String concat =",";
         String[] fileNames = file.list();
         for(String f: fileNames){
-            System.out.println(f);
+            //System.out.println(f);
             allFiles += f;
             allFiles += concat;
         }
@@ -51,7 +51,7 @@ public class InputCommands {
         //Split byte array into multiple packet arrays with the correct packet size.
         List<byte[]> nameListByte = new ArrayList<byte[]>();
         int pointer = 0;
-        int maxPacket = dataSize;
+        int maxPacket = packetSize - headerSize;
         byte[] tempPacket = new byte[maxPacket];
         for(int i = pointer; i < nameByte.length; i += maxPacket) {
         	int newSize = (maxPacket < nameByte.length - i) ? maxPacket : nameByte.length - i;
