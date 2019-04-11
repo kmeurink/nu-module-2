@@ -34,10 +34,10 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	private int packetSize = 1024;//TODO remove eventually
 	
 	//Constructors:
-	public PacketBuilder(int dataSize, int packetSize) {
+	public PacketBuilder(int headSize, int packetSize) {
 		this.packetSize = packetSize;
-		this.packetHeaderArray = new byte[packetSize - dataSize];
-		this.packetDataArray = new byte[dataSize];
+		this.packetHeaderArray = new byte[headSize];
+		this.packetDataArray = new byte[packetSize - headerSize];
 		this.packetArrayTotal = new byte[packetSize];
 	}
 	

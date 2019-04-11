@@ -1,11 +1,8 @@
 package com.nedap.university.test;
 
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.*;
 
 //import static org.junit.jupiter.api.Assertions.*;
-import static org.hamcrest.CoreMatchers.*;
-import java.io.FileNotFoundException;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;

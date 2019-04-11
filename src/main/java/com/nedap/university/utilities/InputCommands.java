@@ -11,15 +11,14 @@ public class InputCommands {
 	//Named Constants:
 	private PacketBuilder headerConstructor;
 	private String directory = "C:/Users/kester.meurink/Nedap university/module 2/assignment/";
-	private List<Byte> fileNamesList;
 	private List<byte[]> packetsToSend;
 	private int dataSize = 1011; //TODO make changeable eventually
 	private int packetSize = 1024;//TODO make changeable eventually
+	private byte[] replyPacket; 
 	
 	//Constructors:
 	public InputCommands() {
 		this.headerConstructor = new PacketBuilder(dataSize, packetSize);
-		fileNamesList = new ArrayList<Byte>();
 		packetsToSend = new ArrayList<byte[]>();
 	}
 	
@@ -35,53 +34,68 @@ public class InputCommands {
 	 * Reacts to the list function sent by the user, by compiling the list of available files.
 	 * @return
 	 */
-	public List<byte[]> listRequest() { //TODO implement
+	public List<byte[]> listRequest() { //TODO improve structure and test
         File file = new File(directory);//TODO change directory for pi
-        File[] files = file.listFiles();
-    	byte[] Data = new byte[ files.length];
-    	headerConstructor.clearData();
-    	headerConstructor.clearHeader();
-    	/*
-        for(File f: files){
-        	String nameTemp = f.getName();
-        	fileNamesList.add(Byte.valueOf(nameTemp));//TODO String of course has multiple bytes.
+    	//Add all file names together in a byte array.
+        byte[] nameByte;
+        String allFiles = "";
+        String concat =",";
+        String[] fileNames = file.list();
+        for(String f: fileNames){
+            System.out.println(f);
+            allFiles += f;
+            allFiles += concat;
         }
-        byte[] tempPacket;
-        while(fileNamesList.size() >= this.dataSize) { //If multiple packets are needed, only the last one has the FIN flags.
-            headerConstructor.setFlags(FlagBytes.SYNLISTACK);
-            tempPacket = new byte[this.dataSize];
-            for (int i = 0; i < this.dataSize; i++) {
-            	tempPacket[i] = fileNamesList.get(i);
-            }
-            headerConstructor.setData(tempPacket); //TODO might cause a linked data problem.
+        nameByte = allFiles.getBytes();
+        
+        //Split byte array into multiple packet arrays with the correct packet size.
+        List<byte[]> nameListByte = new ArrayList<byte[]>();
+        int pointer = 0;
+        int maxPacket = dataSize;
+        byte[] tempPacket = new byte[maxPacket];
+        for(int i = pointer; i < nameByte.length; i += maxPacket) {
+        	int newSize = (maxPacket < nameByte.length - i) ? maxPacket : nameByte.length - i;
+        	tempPacket = new byte[newSize];
+        	for (int j = i; j < i + newSize; j++) {
+        		tempPacket[j - i] = nameByte[j];
+        	}
+    		nameListByte.add(tempPacket.clone());
+        }        
+        //Add flags to the header, based on their order.
+        for (int i = 0; i < nameListByte.size(); i++) {
+        	headerConstructor.clearData();
+        	headerConstructor.clearHeader();
+            headerConstructor.setData(nameListByte.get(i)); //
+        	if (i != nameListByte.size() - 1) {
+                headerConstructor.setFlags(FlagBytes.SYNLISTACK);
+        	} else {
+        		headerConstructor.setFlags(FlagBytes.SYNLISTACKFIN);
+        	}
             packetsToSend.add(headerConstructor.getPacket());
-            fileNamesList.subList(0, (dataSize < fileNamesList.size()) ? dataSize : fileNamesList.size()).clear();;
         }
-        */
-        headerConstructor.setFlags(FlagBytes.SYNLISTACKFIN);
-        //headerConstructor.setData(listToByteArray(fileNamesList));
-        packetsToSend.add(headerConstructor.getPacket());
         return packetsToSend;
 	}
 	
-	public byte[] listAcknowledgement() {
+	public byte[] listAcknowledgement() { 
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.LISTACK);
     	System.out.println("Received acknowledgement of the list request");
-		return null;
-	}
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;
+        }
 	
 	public byte[] listFinalAcknowledgement() {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.LISTACK);
-    	System.out.println("Received acknowledgement of the list request");
-		return null;
-	}
+    	System.out.println("Received final acknowledgement of the list request");
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;
+        }
 	
 	public byte[] listReceivedAcknowledgement() {
-    	//TODO only internal, does not send info back. Probably something with a timeout to retransmit.
+    	//TODO only internal, does not send info back. Probably something with cancelling a timeout to retransmit.
 		return null;
 	}
 	//Pause function commands:

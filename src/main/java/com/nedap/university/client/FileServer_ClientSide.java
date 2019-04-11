@@ -16,12 +16,10 @@ import com.nedap.university.communication.PacketReceiver;
 public class FileServer_ClientSide {
 	//Named variables:
 	private static int clientPort = 8090;//TODO add way for client to set own port.
-	private static int clientPortThreaded = 8099;//TODO add way for client to set own port.
 	private static int serverPort = 8080;
 	private String broadcastString = "255.255.255.255";
 	private InetAddress BROADCASTaddress = InetAddress.getByName(broadcastString);
 	private byte[] broadcastPacket= broadcastString.getBytes();
-	private byte[] broadcastAckPacket= new byte[15];
 	private DatagramPacket broadcast = new DatagramPacket(broadcastPacket, broadcastPacket.length, BROADCASTaddress, serverPort);
 	private DatagramPacket broadcastACK = new DatagramPacket(broadcastPacket, broadcastPacket.length, BROADCASTaddress, serverPort); 
     private DatagramSocket socket = new DatagramSocket(clientPort);
@@ -117,8 +115,8 @@ public class FileServer_ClientSide {
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
-				System.out.println("Packet received from server");
-				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), this.packetReceiver.getReceiverPort());
+				System.out.println("Packet received from server, flags: " + handledPacket[10]); //TODO for testing
+				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), serverPort);//TODO checking bug this.packetReceiver.getReceiverPort()
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();
 			}
@@ -182,7 +180,7 @@ public class FileServer_ClientSide {
 			System.out.println("Sorry this command has not yet been implemented.");
 		} else if (input.equals("2")) {
 			//System.out.println("Sorry this command has not yet been implemented.");
-			this.inputHandler.getList();
+			this.inputHandler.getList();//TODO list function does not have acks to confirm full delivery
 		} else if (input.equals("3")) {
 			System.out.println("Sorry this command has not yet been implemented.");
 		} else if (input.equals("4")) {

@@ -19,7 +19,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	//Named Constants:
 	private PacketBuilder inputPacket;
 	private PacketBuilder outputPacket;
-	private int dataSize = 1011; //TODO make changeable eventually
+	private int headerSize = 16; //TODO make changeable eventually
 	private int packetSize = 1024;//TODO make changeable eventually
     private InetAddress BROADCAST;
     private InetAddress server;
@@ -27,14 +27,16 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
     private InputCommands commands;
     private PacketSender packetSender;
     private DatagramSocket socket;
+    private FileListCompiler fileNameHandler;
     
 	//Constructors:
 	public InputHandler(DatagramSocket socket, InetAddress server, int serverPort) throws UnknownHostException {
 		this.socket = socket;
 		this.server = server;
 		this.serverPort = serverPort;
-		inputPacket = new PacketBuilder(dataSize, packetSize);
-		outputPacket= new PacketBuilder(dataSize, packetSize);
+		inputPacket = new PacketBuilder(headerSize, packetSize);
+		outputPacket= new PacketBuilder(headerSize, packetSize);
+		this.fileNameHandler = new FileListCompiler();
 		this.BROADCAST = InetAddress.getByName("255.255.255.255");
 		commands = new InputCommands();
 		packetSender = new PacketSender(this.socket, this.server, this.serverPort);
@@ -59,12 +61,16 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	 * @param packet
 	 */
 	public void PacketInputSort(byte[] packet, InetAddress addr, int port) { //TODO determine if the current setup is correct.
+		inputPacket.clearData();
+		inputPacket.clearHeader();
+		System.out.println("Starting flag selection.");
 		List<byte[]> dataList = new ArrayList<byte[]>();
+		byte[] data;
 		inputPacket.setPacket(packet);
 		if (Arrays.equals(inputPacket.calculateCheckSum(packet), inputPacket.getCheckSum())) {
 			
 		
-		int command = (int) inputPacket.getFlags(); //TODO change to bytes
+		byte command = inputPacket.getFlags(); //TODO change to bytes
 		switch(command) { //TODO add actions
 		//List function options:
 		case (byte) 33: //SYN/LIST
@@ -74,11 +80,18 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 			break;
 		case (byte) 35: //SYN/LIST/ACK
 			System.out.println("Command tree: SYN/LIST/ACK");
-			commands.listAcknowledgement();
+			//TODO collect data
+			this.fileNameHandler.addToList(inputPacket.getData());
+			data = commands.listAcknowledgement();
+			packetSender.addToQueue(data);
 			break;
 		case (byte) 39: //SYN/LIST/ACK/FIN
 			System.out.println("Command tree: SYN/LIST/ACK/FIN");
-			commands.listFinalAcknowledgement();
+    		//TODO collect last piece of data and add together to print out list given
+			this.fileNameHandler.addToList(inputPacket.getData());
+			this.fileNameHandler.compileList();;
+			data = commands.listFinalAcknowledgement();
+			packetSender.addToQueue(data);
 			break;
 		case (byte) 34: //LIST/ACK
 			System.out.println("Command tree: LIST/ACK");
@@ -160,5 +173,43 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 
 	}
 	
+	/**
+	 * Inner class to handle the composition of the file names list.
+	 * @author kester.meurink
+	 *
+	 */
+	private class FileListCompiler {
+       private List<byte[]> nameListByte = new ArrayList<byte[]>();
+       
+       public void addToList(byte[] fileNames) {
+    	   this.nameListByte.add(fileNames);
+       }
+       
+       public void compileList() {
+           	String concat =",";
+	        //This is assuming all bytes have been received, so all bytes must be collected first before translating back to string. listFinalAcknowledgement method
+	        int byteLengthNames = 0;
+	        for (byte[] i: nameListByte) {
+	        	byteLengthNames += i.length;
+	        }
+	        byte[] reconvertedNamesList = new byte[byteLengthNames];
+	        int pointerIndex = 0;
+	        for (byte[] i: nameListByte) {
+	        	for (int j = 0; j < i.length; j++) {
+	        		reconvertedNamesList[pointerIndex] = i[j];
+	        		pointerIndex++;
+	        	}
+	        }
+
+	        //Now convert back from byte array to the strings using the known concatenation symbol. listFinalAcknowledgement method
+	        String receivedNames= "";
+	        String[] allNamesReceived;
+	        receivedNames = new String(reconvertedNamesList);
+	        allNamesReceived =receivedNames.split(concat);
+	        for (String i : allNamesReceived) {
+	            System.out.println(i);
+	        }
+       }
+	}
 
 }

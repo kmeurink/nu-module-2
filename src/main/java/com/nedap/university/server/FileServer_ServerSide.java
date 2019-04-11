@@ -11,7 +11,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 import com.nedap.university.communication.InputHandler;
 import com.nedap.university.communication.PacketReceiver;
@@ -21,7 +20,6 @@ public class FileServer_ServerSide {
 	//Named constants:
     private DatagramSocket socket;
     private List<String> listQuotes = new ArrayList<String>();
-    private Random random;
 	private static int serverPort = 8080;
 	private boolean finished = false;
 	private boolean listening = true;
@@ -129,7 +127,7 @@ public class FileServer_ServerSide {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
 				System.out.println("Packet received from client");
-				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), this.packetReceiver.getReceiverPort());
+				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), clientPort);//TODO checking bug this.packetReceiver.getReceiverPort()
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();
 			}
