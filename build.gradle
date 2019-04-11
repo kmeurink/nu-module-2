@@ -12,6 +12,7 @@ apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'org.hidetake.ssh'
 
+
 // Global settingsl
 ssh.settings {
   knownHosts = allowAnyHosts    // Disable host key verification
@@ -90,5 +91,6 @@ dependencies {
     // testCompile dependency to testCompile 'org.testng:testng:6.8.1' and add
     // 'test.useTestNG()' to your build script.
     testCompile 'junit:junit:4.12'
+    compile 'junit:junit:4.12'
 }
 
