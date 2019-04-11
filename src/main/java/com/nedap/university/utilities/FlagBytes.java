@@ -11,7 +11,7 @@ public class FlagBytes {
 	public final static byte SYNLIST = (byte) 33;
 	public final static byte SYNLISTACK = (byte) 35;
 	public final static byte SYNLISTACKFIN = (byte) 39;
-	public final static byte LISTACK = (byte) 39;
+	public final static byte LISTACK = (byte) 34;
 	
 	//Possible Pause command flag combinations:
 	public final static byte PAUSYN = (byte) 65;
