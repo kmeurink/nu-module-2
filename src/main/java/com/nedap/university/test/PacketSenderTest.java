@@ -34,10 +34,11 @@ public class PacketSenderTest {
 	public void setUp() throws Exception {
 		testSocket = new DatagramSocket(testPort);
 		testReceiverSocket = new DatagramSocket(receiverTestPort);
-		testSender = new PacketSender(testSocket);
-		testBytePacket = "This is a test.".getBytes();
 		this.BROADCAST = InetAddress.getByName("255.255.255.255");
 		this.local = InetAddress.getByName("localhost");
+		testSender = new PacketSender(testSocket, local, receiverTestPort);
+		testBytePacket = "This is a test.".getBytes();
+
 		receivedPacket = new DatagramPacket(new byte[packetSize], packetSize);
 	}
 
