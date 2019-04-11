@@ -5,6 +5,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
@@ -17,19 +18,24 @@ public class FileServer_ClientSide {
 	private static int clientPort = 8090;//TODO add way for client to set own port.
 	private static int clientPortThreaded = 8099;//TODO add way for client to set own port.
 	private static int serverPort = 8080;
-	private InetAddress BROADCASTaddress = InetAddress.getByName("255.255.255.255");
-	private byte[] broadcastPacket= new byte[0];
-	public DatagramPacket broadcast = new DatagramPacket(broadcastPacket, 0, BROADCASTaddress, serverPort);
-	public DatagramPacket broadcastACK;
-    public DatagramSocket socket = new DatagramSocket(clientPort);
+	private String broadcastString = "255.255.255.255";
+	private InetAddress BROADCASTaddress = InetAddress.getByName(broadcastString);
+	private byte[] broadcastPacket= broadcastString.getBytes();
+	private byte[] broadcastAckPacket= new byte[15];
+	private DatagramPacket broadcast = new DatagramPacket(broadcastPacket, broadcastPacket.length, BROADCASTaddress, serverPort);
+	private DatagramPacket broadcastACK = new DatagramPacket(broadcastPacket, broadcastPacket.length, BROADCASTaddress, serverPort); 
+    private DatagramSocket socket = new DatagramSocket(clientPort);
+    
 	private InetAddress serverAddress;
 	private boolean finished = false;
 	private boolean userFinished = false;
     private PacketReceiver packetReceiver;
 	private InputHandler inputHandler;
+    private boolean broadcasting = true;
     
 	//Constructors:
     public FileServer_ClientSide() throws SocketException, UnknownHostException {
+		socket.setSoTimeout(2000);
 		packetReceiver = new PacketReceiver(socket);
 		this.serverAddress = InetAddress.getByName("localhost");//TODO for testing
 		inputHandler = new InputHandler(socket, serverAddress, serverPort); //TODO create method to set them, instead of on boot?
@@ -40,8 +46,8 @@ public class FileServer_ClientSide {
         try {//Setup connection with server
 			testClient = new FileServer_ClientSide();
 			//TODO Send broadcast until server responds back.
-			testClient.socket.send(testClient.broadcast);
-			testClient.socket.receive(testClient.broadcastACK);
+			testClient.broadcast();
+
 			
 			Scanner scan = new Scanner(System.in);
             testClient.userInput(scan);
@@ -65,6 +71,24 @@ public class FileServer_ClientSide {
     }
     
     //Commands:
+    
+    public void broadcast() {
+		while(broadcasting) {
+			try {
+				socket.send(broadcast);
+				socket.receive(broadcastACK);
+				this.serverAddress = broadcastACK.getAddress();
+				broadcastPacket = this.serverAddress.getHostAddress().getBytes();
+				DatagramPacket broadcastReply= new DatagramPacket(broadcastPacket, broadcastPacket.length, serverAddress, serverPort);
+				socket.send(broadcastReply);
+				broadcasting = false;
+			} catch (SocketTimeoutException e) {
+				System.out.println("Failed to connect, retrying.");
+			} catch (IOException e) { //TODO handle error
+				e.printStackTrace();
+			}
+		}
+    }
 
     //TODO correctly implement
     //Example for handling serverinput:

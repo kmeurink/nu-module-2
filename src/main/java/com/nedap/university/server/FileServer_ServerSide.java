@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -23,11 +24,16 @@ public class FileServer_ServerSide {
     private Random random;
 	private static int serverPort = 8080;
 	private boolean finished = false;
+	private boolean listening = true;
 	private InetAddress clientAddress;
 	private int clientPort = 8090;
+	private String BROADCAST = "255.255.255.255";
+	private InetAddress BROADCASTaddress = InetAddress.getByName("255.255.255.255");
     private PacketReceiver packetReceiver;
 	private InputHandler inputHandler;
-	
+	private byte[] broadcastAckPacket= new byte[15];
+	private DatagramPacket broadcastACK = new DatagramPacket(broadcastAckPacket, broadcastAckPacket.length, BROADCASTaddress, serverPort);// 
+
 	//Constructors:	
     public FileServer_ServerSide(int port) throws SocketException, UnknownHostException {
         socket = new DatagramSocket(port);
@@ -43,6 +49,8 @@ public class FileServer_ServerSide {
  
         try {
         	FileServer_ServerSide server = new FileServer_ServerSide(serverPort);
+        	server.connectionSetup();
+        	
         	server.clientInput();
         } catch (SocketException ex) {//TODO handle better
             System.out.println("Socket error: " + ex.getMessage());
@@ -59,6 +67,31 @@ public class FileServer_ServerSide {
 	
 	
 	//Commands:
+    
+    /**
+     * Wait on a reply from the client, before initiating.
+     */
+    public void connectionSetup() {
+    	while(listening) {
+    		try {
+				socket.receive(this.broadcastACK);
+				byte[] test1 = this.BROADCAST.getBytes();
+				byte[] test2 = this.broadcastACK.getData();
+	    		if(Arrays.equals(this.broadcastACK.getData(), this.BROADCAST.getBytes())) {
+	    			System.out.println("Sending broadcast acknowledgement"); //TODO not reached, something does not match
+	        		byte[] broadcastPacket= new byte[0];
+	        		DatagramPacket broadcast = new DatagramPacket(broadcastPacket, 0, this.broadcastACK.getAddress(), serverPort);
+	        		socket.send(broadcast);
+	    		} else {
+	    			listening = false;
+	    		}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+    	}
+    }
 
     //Load the quotes from a file into a string array.
     //TODO replace by loading a folder.
