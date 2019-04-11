@@ -77,11 +77,15 @@ public class FileServer_ClientSide {
 			try {
 				socket.send(broadcast);
 				socket.receive(broadcastACK);
+				System.out.print("server reply received");
 				this.serverAddress = broadcastACK.getAddress();
 				broadcastPacket = this.serverAddress.getHostAddress().getBytes();
 				DatagramPacket broadcastReply= new DatagramPacket(broadcastPacket, broadcastPacket.length, serverAddress, serverPort);
 				socket.send(broadcastReply);
+				System.out.println("client reply sent.");
 				broadcasting = false;
+				inputHandler.bindAddress(serverAddress);
+				socket.setSoTimeout(0);
 			} catch (SocketTimeoutException e) {
 				System.out.println("Failed to connect, retrying.");
 			} catch (IOException e) { //TODO handle error

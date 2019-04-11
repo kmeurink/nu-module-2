@@ -37,7 +37,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 		outputPacket= new PacketBuilder(dataSize, packetSize);
 		this.BROADCAST = InetAddress.getByName("255.255.255.255");
 		commands = new InputCommands();
-		packetSender = new PacketSender(this.socket, this.server, this.serverPort); //TODO will this cause conflicts with the receiver?
+		packetSender = new PacketSender(this.socket, this.server, this.serverPort);
 		packetSender.start();
 	}
 	
@@ -49,6 +49,11 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	
 	//PacketInput commands:
 	
+	public void bindAddress(InetAddress server) {
+		packetSender.setAddress(server);
+		this.server = server;
+	}
+	
 	/**
 	 * Reads out the contents of the packet and determines what to do.
 	 * @param packet
@@ -56,7 +61,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	public void PacketInputSort(byte[] packet, InetAddress addr, int port) { //TODO determine if the current setup is correct.
 		List<byte[]> dataList = new ArrayList<byte[]>();
 		inputPacket.setPacket(packet);
-		if (Arrays.equals(inputPacket.calculateCheckSum(packet), inputPacket.getCheckSum()) && !addr.equals(BROADCAST)) {
+		if (Arrays.equals(inputPacket.calculateCheckSum(packet), inputPacket.getCheckSum())) {
 			
 		
 		int command = (int) inputPacket.getFlags(); //TODO change to bytes

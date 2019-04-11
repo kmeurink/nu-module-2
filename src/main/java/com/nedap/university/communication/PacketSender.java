@@ -60,6 +60,13 @@ public class PacketSender extends Thread{ //TODO perhaps better as a method, but
 	
 	
 	//Commands:
+	/**
+	 * Used to set client destination address to the actual server ip.
+	 * @param server
+	 */
+	public void setAddress(InetAddress server) {
+		this.sendingAddress = server;
+	}
 	
 	/**
 	 * Builds the datagram packet that is to be sent to the receiver.

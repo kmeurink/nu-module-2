@@ -80,7 +80,7 @@ public class FileServer_ServerSide {
 	    		if(Arrays.equals(this.broadcastACK.getData(), this.BROADCAST.getBytes())) {
 	    			System.out.println("Sending broadcast acknowledgement"); //TODO not reached, something does not match
 	        		byte[] broadcastPacket= new byte[0];
-	        		DatagramPacket broadcast = new DatagramPacket(broadcastPacket, 0, this.broadcastACK.getAddress(), serverPort);
+	        		DatagramPacket broadcast = new DatagramPacket(broadcastPacket, 0, this.broadcastACK.getAddress(), this.broadcastACK.getPort());
 	        		socket.send(broadcast);
 	    		} else {
 	    			listening = false;
