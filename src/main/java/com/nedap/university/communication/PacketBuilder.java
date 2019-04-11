@@ -266,7 +266,7 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * @param data
 	 */
 	public void setPacket(byte[] total) {
-		for (int i = 0; i < this.packetArrayTotal.length; i++) {
+		for (int i = 0; i < total.length; i++) {
 			packetArrayTotal[i] = total[i];
 		}
 	}

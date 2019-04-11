@@ -56,7 +56,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	public void PacketInputSort(byte[] packet, InetAddress addr, int port) { //TODO determine if the current setup is correct.
 		List<byte[]> dataList = new ArrayList<byte[]>();
 		inputPacket.setPacket(packet);
-		if (Arrays.equals(inputPacket.calculateCheckSum(packet), inputPacket.getCheckSum())) {
+		if (Arrays.equals(inputPacket.calculateCheckSum(packet), inputPacket.getCheckSum()) && !addr.equals(BROADCAST)) {
 			
 		
 		int command = (int) inputPacket.getFlags(); //TODO change to bytes
