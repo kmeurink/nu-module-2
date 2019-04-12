@@ -80,7 +80,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.LISTACK);
-    	System.out.println("Received acknowledgement of the list request");
+    	System.out.println("Received acknowledgement of the list arrival");
         replyPacket = headerConstructor.getPacket();
         return replyPacket;
         }
@@ -101,90 +101,138 @@ public class InputCommands {
 	//Pause function commands:
 	
 	public byte[] pauseSynchronization() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.PAUSYNACK);
 		return null;
 	}
 	
 	public byte[] pauseSynchronizationAcknowledgement() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.PAUACK);
+
 		return null;
 	}
 	
 	public byte[] pauseAcknowledgement() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	//TODO do something internal, actually pausing for example.
 		return null;
 	}
 	
 	//Download function commands:
 	
 	public byte[] downloadSynchronization() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.SYNDOWNACK);
+
 		return null;
 	}
 	
 	public byte[] downloadSynchronizationAcknowledgement() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.ACKDOWN);
+
 		return null;
 	}
 	
 	public byte[] downloadAcknowledgement() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	//TODO which flags depends on whether it is the final piece. !!server sends this.
+    	headerConstructor.setFlags(FlagBytes.DOWN);
+    	headerConstructor.setFlags(FlagBytes.FINDOWN);
+
 		return null;
 	}
 
 	public byte[] download() {
-	
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.ACKDOWN);
+
 		return null;
 	}
 	
 	public byte[] downloadFinish() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.FINDOWNACK);
+
 		return null;
 	}
 	
 	public byte[] downloadFinishAcknowledgment() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	//TODO something happens internally to finish download. !!happens serverside.
 		return null;
 	}
 	//Upload function commands:
 	
 	public byte[] uploadSynchronization() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.SYNUPACK);
+
 		return null;
 	}
 	
 	public byte[] uploadSynchronizationAcknowledgement() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.UP);
+
 		return null;
 	}
 	
 	public byte[] uploadAcknowledgement() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	//TODO which flag depends on if it is the last packet. !! client does this
+    	headerConstructor.setFlags(FlagBytes.UP);
+    	headerConstructor.setFlags(FlagBytes.FINUP);
+
 		return null;
 	}
 
 	public byte[] upload() {
-	
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.UPACK);
+
 		return null;
 	}
 	
 	public byte[] uploadFinish() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.FINUPACK);
 		return null;
 	}
 	
 	public byte[] uploadFinishAcknowledgement() {
-		
-		return null;
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	//TODO do something internal to finish upload. !!happens clientside
+    	return null;
 	}
 	//Stop function commands:
 	public byte[] stopSynchronization() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.STOPACK);
 		return null;
 	}
 	
 	public byte[] stopAcknowledgement() {
-		
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	//TODO do something to stop the system.
 		return null;
 	}
 	

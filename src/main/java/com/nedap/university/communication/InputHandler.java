@@ -100,58 +100,90 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 			break;
 		//Pause function options:
 		case (byte) 65: //PAUSE/SYN
+			System.out.println("Command tree: PAUSE/SYN");
 			commands.pauseSynchronization();
 			break;
 		case (byte) 67: //PAUSE/SYN/ACK
+			System.out.println("Command tree: PAUSE/SYN/ACK");
+
 			commands.pauseSynchronizationAcknowledgement();
 			break;
 		case (byte) 66: //PAUSE/ACK
+			System.out.println("Command tree: PAUSE/ACK");
+
 			commands.pauseAcknowledgement();
 			break;
 		//Download function options:
 		case (byte) 17: //SYN/DOWNLOAD
+			System.out.println("Command tree: SYN/DOWNLOAD");
+
 			commands.downloadSynchronization();
 			break;
 		case (byte) 19: //SYN/DOWNLOAD/ACK
+			System.out.println("Command tree: SYN/DOWNLOAD/ACK");
+
 			commands.downloadSynchronizationAcknowledgement();
 			break;
 		case (byte) 18: //ACK/DOWNLOAD
+			System.out.println("Command tree: ACK/DOWNLOAD");
+
 			commands.downloadAcknowledgement();
 			break;
 		case (byte) 16: //DOWNLOAD
+			System.out.println("Command tree: DOWNLOAD");
+
 			commands.download();
 			break;
 		case (byte) 20: //FIN/DOWNLOAD
+			System.out.println("Command tree: FIN/DOWNLOAD");
+
 			commands.downloadFinish();
 			break;
 		case (byte) 22: //FIN/DOWNLOAD/ACK
+			System.out.println("Command tree: FIN/DOWNLOAD/ACK");
+
 		commands.downloadFinishAcknowledgment();
 		break;
 
 		//Upload function options:
 		case (byte) 9: //SYN/UPLOAD
+			System.out.println("Command tree: SYN/UPLOAD");
 			commands.uploadSynchronization();
 			break;
 		case (byte) 11: //SYN/UPLOAD/ACK
+			System.out.println("Command tree: SYN/UPLOAD/ACK");
+
 			commands.uploadSynchronizationAcknowledgement();
 			break;
 		case (byte) 8: //UPLOAD
+			System.out.println("Command tree: UPLOAD");
+
 			commands.upload();
 			break;
 		case (byte) 10: //UPLOAD/ACK
+			System.out.println("Command tree: UPLOAD/ACK");
+
 			commands.uploadAcknowledgement();
 			break;
 		case (byte) 12: //FIN/UPLOAD
+			System.out.println("Command tree: FIN/UPLOAD");
+
 			commands.uploadFinish();
 			break;
 		case (byte) 14: //FIN/UPLOAD/ACK
+			System.out.println("Command tree: FIN/UPLOAD/ACK");
+
 			commands.uploadFinishAcknowledgement();
 			break;
 		//Stop function options:
 		case (byte) -127: //STARTSTOP/SYN
+			System.out.println("Command tree: STARTSTOP/SYN");
+
 			commands.stopSynchronization();
 			break;
 		case (byte) -126: //STARTSTOP/ACK
+			System.out.println("Command tree: STARTSTOP/ACK");
+
 			commands.stopAcknowledgement();
 			break;
 		case (byte) 0: //no flags set, only used for a broadcast.TODO is this useful?

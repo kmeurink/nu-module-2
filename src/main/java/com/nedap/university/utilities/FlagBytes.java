@@ -24,6 +24,7 @@ public class FlagBytes {
 	public final static byte ACKDOWN = (byte) 18;
 	public final static byte DOWN = (byte) 16;
 	public final static byte FINDOWN = (byte) 20;
+	public final static byte FINDOWNACK = (byte) 22;
 	
 	//Possible upload command flag combinations:
 	public final static byte SYNUP = (byte) 9;
