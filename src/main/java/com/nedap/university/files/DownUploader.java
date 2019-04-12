@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.CRC32;
 
 /**
  * Takes care of the downloading of a file, keeping track of its progress.
@@ -123,6 +124,10 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 				count++;
 			}
 		}
+		//TODO get file checksum given by server or client.
+		long receivedChecksum = 0;
+		if (calculateFileChecksum(finalFile) == receivedChecksum) {
+			
 		try {
 			FileOutputStream fos = new FileOutputStream(fileName);
 			for(byte i : finalFile) {
@@ -135,6 +140,9 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 		} catch (IOException e) { //TODO handle error
 			e.printStackTrace();
 		}
+	} else {
+		System.out.println("File was corrupted, please try again.");//TODO further implement a feedback system.
+	}
 		
 	}
 	
@@ -201,5 +209,16 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	 */
 	public void setAckNumber(int ack) {
 		this.ackNumber = ack;
+	}
+	
+	/**
+	 * Calculates the checksum for a full file of data.
+	 * @param file
+	 * @return
+	 */
+	public long calculateFileChecksum(byte[] file) {
+		CRC32 checkSum = new CRC32();
+		checkSum.update(file);
+		return checkSum.getValue();
 	}
 }

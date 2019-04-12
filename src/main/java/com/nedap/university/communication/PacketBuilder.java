@@ -1,6 +1,10 @@
 package com.nedap.university.communication;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.zip.CRC32;
 
 /**
  * Class to build the packets from the given header information and data block.
@@ -17,7 +21,7 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	private int commandsStartIndex = 11;
 	private int windowStartIndex = 12;
 	private int checksumStartIndex = 14;
-	private int endIndex = 16;
+	private int endIndex = 22;
 	
 	
 	//Bitwise operator constants:
@@ -30,7 +34,7 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	private byte[] packetHeaderArray;
 	private byte[] packetDataArray;
 	private byte[] packetArrayTotal;
-	private int headerSize = 16;
+	private int headerSize = 22;
 	private int packetSize = 1024;//TODO remove eventually
 	
 	//Constructors:
@@ -115,7 +119,7 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * @return
 	 */
 	public byte[] getCheckSum() {
-		byte[] checksumArray = new byte[2];
+		byte[] checksumArray = new byte[8];
 		for (int i = checksumStartIndex; i < endIndex; i++) {
 			checksumArray[i - checksumStartIndex] = this.packetArrayTotal.clone()[i];
 		}
@@ -222,23 +226,33 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * Sets the checksum in the header.
 	 * @param checkSum
 	 */
-	public void setCheckSum(short checkSum) {
-		int temp = checkSum & bitMaskShift;
-		packetArrayTotal[this.checksumStartIndex + 1] = (byte) temp;
-		temp = checkSum >> bitwiseShift8 & bitMaskShift;
-		packetArrayTotal[this.checksumStartIndex] = (byte) temp;
+	public void setCheckSum(byte[] checkSum) {
+		for(int i = this.checksumStartIndex; i < this.endIndex; i++) {
+			packetArrayTotal[i] = checkSum[i-this.checksumStartIndex];
+		}
 	}
 	
 	/**
-	 * Calculates the checksum of a file.
+	 * Calculates the checksum of a packet.
 	 * @param file
 	 * @return
 	 */
-	public byte[] calculateCheckSum(byte[] file) { //TODO implemente calculations
-		byte[] tempCRC = new byte[2];
-		tempCRC[0] = 0;
-		tempCRC[1] = 0;
-		return tempCRC;
+	public byte[] calculateCheckSum(byte[] file) { //TODO handle checking the header and the data somehow, while skipping the crc.
+		CRC32 checkSum = new CRC32();
+		checkSum.update(file);
+		long checkSumValue = checkSum.getValue();
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(bos);
+		try {
+			dos.writeLong(checkSumValue);
+			dos.flush();
+		} catch (IOException e) {
+			// TODO handle error
+			e.printStackTrace();
+		}
+		// etc.
+		byte[] data = bos.toByteArray();
+		return data;
 	}
 	
 	/**

@@ -3,6 +3,8 @@ package com.nedap.university.test;
 import static org.junit.Assert.*;
 
 import java.nio.ByteBuffer;
+import java.util.Random;
+import java.util.zip.CRC32;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -12,7 +14,7 @@ import com.nedap.university.communication.PacketBuilder;
 public class PacketBuilderTest {
 	private PacketBuilder testBuilder;
 	private int packetLength = 1024;
-	private int headerSize = 16;
+	private int headerSize = 22;
 	private int dataLength = packetLength - headerSize;
 	private byte testEmptyFlags = 0;
 	private byte testEmptyCommands = 0;
@@ -37,21 +39,27 @@ public class PacketBuilderTest {
 	private byte testCommand2 = (byte) 4;
 	
 	private short window1 = 150;
-	private byte[] window1Bytes = ByteBuffer.allocate(2).putShort(window1).array();;
+	private byte[] window1Bytes = ByteBuffer.allocate(2).putShort(window1).array();
 	private short window2 = 31567;
-	private byte[] window2Bytes = ByteBuffer.allocate(2).putShort(window2).array();;
+	private byte[] window2Bytes = ByteBuffer.allocate(2).putShort(window2).array();
 	
-	private short checkSum1 = 210;
-	private byte[] checkSum1Bytes = ByteBuffer.allocate(2).putShort(checkSum1).array();;
-	private short checkSum2 = 24742;
-	private byte[] checkSum2Bytes = ByteBuffer.allocate(2).putShort(checkSum2).array();;
+	private long checkSum1 = 210;
+	private byte[] checkSum1Bytes = ByteBuffer.allocate(8).putLong(checkSum1).array();
+	private long checkSum2 = 24742;
+	private byte[] checkSum2Bytes = ByteBuffer.allocate(8).putLong(checkSum2).array();
 	
+	private Random random = new Random();
+	private long fileValue = 2299019777671211267L;
+	
+	private byte[] testFile = ByteBuffer.allocate(8).putLong(fileValue).array();
+	private CRC32 checksumTester = new CRC32();
+
 	
 	@Before
 	public void setUp() throws Exception {
 		testBuilder = new PacketBuilder(dataLength, packetLength);
 	}
-
+	
 	@Test
 	public void testPacketBuilderInit() {
 		assertEquals(headerSize, testBuilder.getHeader().length);
@@ -114,7 +122,7 @@ public class PacketBuilderTest {
 
 	@Test
 	public void testGetCheckSum() {
-		assertEquals(2, testBuilder.getCheckSum().length);
+		assertEquals(8, testBuilder.getCheckSum().length);
 		assertTrue(this.checkContents((byte) 0, testBuilder.getCheckSum()));
 	}
 
@@ -181,10 +189,21 @@ public class PacketBuilderTest {
 
 	@Test
 	public void testSetCheckSum() {
-		testBuilder.setCheckSum(checkSum1);
+		testBuilder.setCheckSum(checkSum1Bytes);
 		assertArrayEquals(checkSum1Bytes, testBuilder.getCheckSum());
-		testBuilder.setCheckSum(checkSum2);
+		testBuilder.setCheckSum(checkSum2Bytes);
 		assertArrayEquals(checkSum2Bytes, testBuilder.getCheckSum());
+	}
+	
+	@Test
+	public void testCalculateChecksum() {
+		checksumTester.update(testFile);
+		long testFileCRC = checksumTester.getValue();
+		
+		byte[] testCRC = testBuilder.calculateCheckSum(testFile);
+		assertEquals(8, testCRC.length);
+	    ByteBuffer buffer = ByteBuffer.wrap(testCRC);
+	    assertEquals(testFileCRC, buffer.getLong());
 	}
 /*
 	@Test
