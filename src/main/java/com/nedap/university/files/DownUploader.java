@@ -132,7 +132,7 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	/**
 	 * Wraps up the byte arrays of the file into a single array and writes it to an actual file.
 	 */
-	public void finishFile() {
+	public void finishFile() { //Maybe make threaded to speed up sending/receiving?
 		byte[] finalFile = new byte[this.determineSize()];
 		int count = 0;
 		for (byte[] i : this.fileData) {

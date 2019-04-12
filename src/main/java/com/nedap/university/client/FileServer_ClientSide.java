@@ -93,7 +93,7 @@ public class FileServer_ClientSide {
     }
 
     //TODO correctly implement
-    //Example for handling serverinput:
+    //Example for handling server input:
     /**
 	 * Command to continuously read out the server input.
 	 * Allowing for simultaneous processing of input, output and internal commands.
@@ -111,12 +111,12 @@ public class FileServer_ClientSide {
 	 * Loop for listening to buffered reader in, reading out the server input
 	 * And performing the required actions based on the input.
 	 */
-	public void serverConnection() {
+	public void serverConnection() { //TODO figure out how to handle reliable data transfer. 
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
 				System.out.println("Packet received from server, flag: " + handledPacket[10]); //TODO for testing
-				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), serverPort);//TODO checking bug this.packetReceiver.getReceiverPort()
+				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), serverPort);
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();
 			}
@@ -165,7 +165,7 @@ public class FileServer_ClientSide {
 		System.out.println();
 		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
 		System.out.println("\\\\   Welcome to this fileServer, please type a number corresponding to one of the options below                 \\\\");
-		System.out.println("\\\\ 1 : Refresh.                                                                                                 \\\\");
+		System.out.println("\\\\ 1 : Select local file repository.                                                                            \\\\");
 		System.out.println("\\\\ 2 : List the available files on the server.                                                                  \\\\");
 		System.out.println("\\\\ 3 : Download a file from the server.                                                                         \\\\");
 		System.out.println("\\\\ 4 : Upload a file to the server.                                                                             \\\\");
@@ -186,6 +186,7 @@ public class FileServer_ClientSide {
 		} else if (input.equals("3")) {
 			System.out.println("Sorry this command has not yet been implemented.");
 		} else if (input.equals("4")) {
+			//TODO implement selector, to find the file that needs to be uploaded.
 			System.out.println("Sorry this command has not yet been implemented.");
 		} else if (input.equals("5")) {
 			System.out.println("Sorry this command has not yet been implemented.");

@@ -97,7 +97,7 @@ public class FileServer_ServerSide {
 	 * Loop for listening to buffered reader in, reading out the server input
 	 * And performing the required actions based on the input.
 	 */
-	public void serverConnection() { //TODO bug present where packets are sent double after a client disconnects and reconnects.
+	public void serverConnection() { //TODO figure out how to handle reliable data transfer.
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
