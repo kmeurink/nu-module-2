@@ -19,6 +19,7 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	
 	//Named constants:
 	private String fileName;
+	private short fileNumber;
 	private int fileSize;
 	private List<byte[]> fileData; //TODO is list the best container?
 	private String filePath= ""; //TODO determine how to choose this.
@@ -37,6 +38,14 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	
 	
 	//Queries:
+	
+	/**
+	 * Returns the filenumber for this file.
+	 * @return
+	 */
+	public short getFileNumber() {
+		return this.fileNumber;
+	}
 	
 	/**
 	 * Returns the name of the downloading file.
@@ -63,6 +72,14 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	}
 	
 	//Commands:
+	
+	/**
+	 * Sets the filenumber for this file.
+	 * @return
+	 */
+	public void setFileNumber(short number) {
+		this.fileNumber = number;
+	}
 	
 	/**
 	 * Set whether the file is a download or upload.

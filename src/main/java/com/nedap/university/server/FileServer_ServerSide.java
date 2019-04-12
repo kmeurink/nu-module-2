@@ -121,7 +121,7 @@ public class FileServer_ServerSide {
      * @deprecated
      * Wait on a reply from the client, before initiating.
      */
-    public void connectionSetup() {//TODO move this to the standard receive function, otherwise connection is only possible once.
+    public void connectionSetup() {
     	while(listening) {
     		try {
 				socket.receive(this.broadcastACK);

@@ -164,7 +164,7 @@ public class FileServer_ClientSide {
 		System.out.println();
 		System.out.println();
 		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
-		System.out.println("\\\\   Welcome to this fileServer, please type a number corresponding to one of the oftions below                 \\\\");
+		System.out.println("\\\\   Welcome to this fileServer, please type a number corresponding to one of the options below                 \\\\");
 		System.out.println("\\\\ 1 : Refresh.                                                                                                 \\\\");
 		System.out.println("\\\\ 2 : List the available files on the server.                                                                  \\\\");
 		System.out.println("\\\\ 3 : Download a file from the server.                                                                         \\\\");
@@ -182,7 +182,6 @@ public class FileServer_ClientSide {
 	private void handleInput(String input) { //TODO actually handle the input, possibly better to do in another class?
 		if (input.equals("1")) { //TODO make connection before starting everything. So automatic.
 		} else if (input.equals("2")) {
-			//System.out.println("Sorry this command has not yet been implemented.");
 			this.inputHandler.getList();//TODO list function does not have acks to confirm full delivery
 		} else if (input.equals("3")) {
 			System.out.println("Sorry this command has not yet been implemented.");
