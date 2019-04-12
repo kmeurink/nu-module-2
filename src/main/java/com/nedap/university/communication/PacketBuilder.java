@@ -35,7 +35,8 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	private byte[] packetDataArray;
 	private byte[] packetArrayTotal;
 	private int headerSize = 22;
-	private int packetSize = 1024;//TODO remove eventually
+	private int packetSize = 1024;
+	private int checkSumSize = 8;
 	
 	//Constructors:
 	public PacketBuilder(int headSize, int packetSize) {
@@ -150,6 +151,24 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 */
 	public byte[] getPacket() {
 		return this.packetArrayTotal.clone();
+	}
+	
+	/**
+	 * Returns the total packet excluding the crc itself.
+	 * Used for checking if a packet is not corrupted.
+	 * @return
+	 */
+	public byte[] getCRCFile() {
+		byte[] CRCFilearray = new byte[this.packetSize - checkSumSize];
+		//Read the header uptill the crc.
+		for (int i = 0; i < (this.headerSize - checkSumSize); i++) {
+			CRCFilearray[i] = this.packetArrayTotal.clone()[i];
+		}
+		//Read the data.
+		for (int i = this.headerSize; i < this.packetSize; i++) {
+			CRCFilearray[i - checkSumSize] = this.packetArrayTotal.clone()[i];
+		}
+		return CRCFilearray;
 	}
 	
 	//Commands:

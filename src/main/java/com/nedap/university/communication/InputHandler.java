@@ -67,15 +67,18 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 		List<byte[]> dataList = new ArrayList<byte[]>();
 		byte[] data;
 		inputPacket.setPacket(packet);
-		if (Arrays.equals(inputPacket.calculateCheckSum(packet), inputPacket.getCheckSum())) {
+		//System.out.println(Arrays.toString(inputPacket.calculateCheckSum(inputPacket.getCRCFile())));
+		//System.out.println(Arrays.toString(inputPacket.getCheckSum()));
+		if (Arrays.equals(inputPacket.calculateCheckSum(inputPacket.getCRCFile()), inputPacket.getCheckSum())) { //TODO Check if this works, getCRCFile has not yet been tested.
 			
 		
-		byte command = inputPacket.getFlags(); //TODO change to bytes
+		byte command = inputPacket.getFlags();
 		switch(command) { //TODO add actions
 		//List function options:
 		case (byte) 33: //SYN/LIST
 			System.out.println("Command tree: SYN/LIST");
 			dataList = commands.listRequest();
+			//System.out.println("Filename list size" + dataList.size());
 			packetSender.addToQueue(dataList);
 			break;
 		case (byte) 35: //SYN/LIST/ACK
@@ -85,7 +88,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 			data = commands.listAcknowledgement();
 			packetSender.addToQueue(data);
 			break;
-		case (byte) 39: //SYN/LIST/ACK/FIN //TODO the packet it is receiving does not have any contents, where did it go?
+		case (byte) 39: //SYN/LIST/ACK/FIN
 			System.out.println("Command tree: SYN/LIST/ACK/FIN");
     		//TODO collect last piece of data and add together to print out list given
 			this.fileNameHandler.addToList(inputPacket.getData());
@@ -200,6 +203,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	 */
 	public void getList() {//TODO perhaps move to other class?
 		this.outputPacket.setFlags(FlagBytes.SYNLIST);
+		this.outputPacket.setCheckSum(outputPacket.calculateCheckSum(outputPacket.getCRCFile()));
 		byte[] outputData = this.outputPacket.getPacket();
 		packetSender.addToQueue(outputData);
 
@@ -214,12 +218,12 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
        private List<byte[]> nameListByte = new ArrayList<byte[]>();
        
        public void addToList(byte[] fileNames) {
-    	   System.out.println("Adding files to list. " +  Thread.currentThread());
+    	   System.out.println("Adding files to list. " +  Thread.currentThread()); //TODO for testing.
     	   this.nameListByte.add(fileNames);
        }
        
        public void compileList() {
-    	   System.out.println("Compiling list. " +  Thread.currentThread());
+    	   System.out.println("Compiling list. " +  Thread.currentThread()); //TODO for testing.
            	String concat =",";
 	        //This is assuming all bytes have been received, so all bytes must be collected first before translating back to string. listFinalAcknowledgement method
 	        int byteLengthNames = 0;
@@ -243,6 +247,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	        for (String i : allNamesReceived) {
 	            System.out.println(i);
 	        }
+	        nameListByte.clear();
        }
 	}
 

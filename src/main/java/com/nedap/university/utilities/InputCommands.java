@@ -19,7 +19,7 @@ public class InputCommands {
 	//Constructors:
 	public InputCommands() {
 		this.headerConstructor = new PacketBuilder(headerSize, packetSize);
-		packetsToSend = new ArrayList<byte[]>();
+		
 	}
 	
 	
@@ -35,11 +35,12 @@ public class InputCommands {
 	 * @return
 	 */
 	public List<byte[]> listRequest() { //TODO improve structure and test
+		packetsToSend = new ArrayList<byte[]>();
         File file = new File(directory);//TODO change directory for pi
     	//Add all file names together in a byte array.
         byte[] nameByte;
         String allFiles = "";
-        String concat =",";
+        String concat = ",";
         String[] fileNames = file.list();
         for(String f: fileNames){
             //System.out.println(f);
@@ -50,6 +51,7 @@ public class InputCommands {
         
         //Split byte array into multiple packet arrays with the correct packet size.
         List<byte[]> nameListByte = new ArrayList<byte[]>();
+        nameListByte.clear();
         int pointer = 0;
         int maxPacket = packetSize - headerSize;
         byte[] tempPacket = new byte[maxPacket];
@@ -71,6 +73,7 @@ public class InputCommands {
         	} else {
         		headerConstructor.setFlags(FlagBytes.SYNLISTACKFIN);
         	}
+        	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));//TODO this seems a bit ridiculous, replace by a simpler version?
             packetsToSend.add(headerConstructor.getPacket());
         }
         return packetsToSend;
@@ -81,6 +84,7 @@ public class InputCommands {
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.LISTACK);
     	System.out.println("Received acknowledgement of the list arrival");
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
         replyPacket = headerConstructor.getPacket();
         return replyPacket;
         }
@@ -90,6 +94,7 @@ public class InputCommands {
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.LISTACK);
     	System.out.println("Received final acknowledgement of the list request");
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
         replyPacket = headerConstructor.getPacket();
         return replyPacket;
         }
@@ -104,6 +109,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.PAUSYNACK);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
 		return null;
 	}
 	
@@ -111,6 +117,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.PAUACK);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
 
 		return null;
 	}
@@ -128,6 +135,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.SYNDOWNACK);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
 
 		return null;
 	}
@@ -136,6 +144,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.ACKDOWN);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
 
 		return null;
 	}
@@ -146,6 +155,7 @@ public class InputCommands {
     	//TODO which flags depends on whether it is the final piece. !!server sends this.
     	headerConstructor.setFlags(FlagBytes.DOWN);
     	headerConstructor.setFlags(FlagBytes.FINDOWN);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
 
 		return null;
 	}
@@ -154,6 +164,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.ACKDOWN);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
 
 		return null;
 	}
@@ -162,6 +173,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.FINDOWNACK);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
 
 		return null;
 	}
@@ -178,6 +190,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.SYNUPACK);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
 
 		return null;
 	}
@@ -186,6 +199,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.UP);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
 
 		return null;
 	}
@@ -196,6 +210,7 @@ public class InputCommands {
     	//TODO which flag depends on if it is the last packet. !! client does this
     	headerConstructor.setFlags(FlagBytes.UP);
     	headerConstructor.setFlags(FlagBytes.FINUP);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
 
 		return null;
 	}
@@ -204,6 +219,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.UPACK);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
 
 		return null;
 	}
@@ -212,6 +228,8 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.FINUPACK);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
+
 		return null;
 	}
 	
@@ -226,6 +244,8 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.STOPACK);
+    	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
+
 		return null;
 	}
 	

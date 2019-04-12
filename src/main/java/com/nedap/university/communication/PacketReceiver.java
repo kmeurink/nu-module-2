@@ -45,7 +45,7 @@ public class PacketReceiver {//TODO perhaps better as a method, but is used by b
 	}
 	
 	//Commands:
-	  /**
+	 /**
      * Class to receive any packets sent to the socket and return them.
      * @throws IOException
      */

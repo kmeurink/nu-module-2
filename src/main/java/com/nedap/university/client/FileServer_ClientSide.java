@@ -75,12 +75,12 @@ public class FileServer_ClientSide {
 			try {
 				socket.send(broadcast);
 				socket.receive(broadcastACK);
-				System.out.print("server reply received");
+				//System.out.print("server reply received");
 				this.serverAddress = broadcastACK.getAddress();
 				broadcastPacket = this.serverAddress.getHostAddress().getBytes();
-				DatagramPacket broadcastReply= new DatagramPacket(broadcastPacket, broadcastPacket.length, serverAddress, serverPort);
-				socket.send(broadcastReply);
-				System.out.println("client reply sent.");
+				//DatagramPacket broadcastReply= new DatagramPacket(broadcastPacket, broadcastPacket.length, serverAddress, serverPort);
+				//socket.send(broadcastReply);
+				//System.out.println("client reply sent.");
 				broadcasting = false;
 				inputHandler.bindAddress(serverAddress);
 				socket.setSoTimeout(0);
@@ -115,7 +115,7 @@ public class FileServer_ClientSide {
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
-				System.out.println("Packet received from server, flags: " + handledPacket[10]); //TODO for testing
+				System.out.println("Packet received from server, flag: " + handledPacket[10]); //TODO for testing
 				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), serverPort);//TODO checking bug this.packetReceiver.getReceiverPort()
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();
@@ -161,14 +161,18 @@ public class FileServer_ClientSide {
 	 * Prints out the elements of the textual user interface.
 	 */
 	private void printTUI() {
-		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
-		System.out.println("Welcome to this fileServer, please type a number corresponding to one of the oftions below");
-		System.out.println("1 : Connect to server.");
-		System.out.println("2 : List the available files on the server.");
-		System.out.println("3 : Download a file from the server.");
-		System.out.println("4 : Upload a file to the server.");
-		System.out.println("5 : Show the statistics of the server connection.");
-		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
+		System.out.println();
+		System.out.println();
+		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
+		System.out.println("\\\\   Welcome to this fileServer, please type a number corresponding to one of the oftions below                 \\\\");
+		System.out.println("\\\\ 1 : Refresh.                                                                                                 \\\\");
+		System.out.println("\\\\ 2 : List the available files on the server.                                                                  \\\\");
+		System.out.println("\\\\ 3 : Download a file from the server.                                                                         \\\\");
+		System.out.println("\\\\ 4 : Upload a file to the server.                                                                             \\\\");
+		System.out.println("\\\\ 5 : Show the statistics of the server connection.                                                            \\\\");
+		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
+		System.out.println();
+		System.out.println();
 	}
 	
 	/**
@@ -177,7 +181,6 @@ public class FileServer_ClientSide {
 	 */
 	private void handleInput(String input) { //TODO actually handle the input, possibly better to do in another class?
 		if (input.equals("1")) { //TODO make connection before starting everything. So automatic.
-			System.out.println("Sorry this command has not yet been implemented.");
 		} else if (input.equals("2")) {
 			//System.out.println("Sorry this command has not yet been implemented.");
 			this.inputHandler.getList();//TODO list function does not have acks to confirm full delivery

@@ -31,7 +31,7 @@ public class FileServer_ServerSide {
 	private InputHandler inputHandler;
 	private byte[] broadcastAckPacket= new byte[15];
 	private DatagramPacket broadcastACK = new DatagramPacket(broadcastAckPacket, broadcastAckPacket.length, BROADCASTaddress, serverPort);// 
-
+	
 	//Constructors:	
     public FileServer_ServerSide(int port) throws SocketException, UnknownHostException {
         socket = new DatagramSocket(port);
@@ -47,7 +47,7 @@ public class FileServer_ServerSide {
  
         try {
         	FileServer_ServerSide server = new FileServer_ServerSide(serverPort);
-        	server.connectionSetup();
+        	//moved to standard receiver connection setup server.connectionSetup();
         	
         	server.clientInput();
         } catch (SocketException ex) {//TODO handle better
@@ -66,31 +66,6 @@ public class FileServer_ServerSide {
 	
 	//Commands:
     
-    /**
-     * Wait on a reply from the client, before initiating.
-     */
-    public void connectionSetup() {
-    	while(listening) {
-    		try {
-				socket.receive(this.broadcastACK);
-				byte[] test1 = this.BROADCAST.getBytes();
-				byte[] test2 = this.broadcastACK.getData();
-	    		if(Arrays.equals(this.broadcastACK.getData(), this.BROADCAST.getBytes())) {
-	    			System.out.println("Sending broadcast acknowledgement"); //TODO not reached, something does not match
-	        		byte[] broadcastPacket= new byte[0];
-	        		DatagramPacket broadcast = new DatagramPacket(broadcastPacket, 0, this.broadcastACK.getAddress(), this.broadcastACK.getPort());
-	        		socket.send(broadcast);
-	    		} else {
-	    			listening = false;
-	    		}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-    	}
-    }
-
     //Load the quotes from a file into a string array.
     //TODO replace by loading a folder.
     private void loadQuotesFromFile(String quoteFile) throws IOException {
@@ -122,16 +97,51 @@ public class FileServer_ServerSide {
 	 * Loop for listening to buffered reader in, reading out the server input
 	 * And performing the required actions based on the input.
 	 */
-	public void serverConnection() {
+	public void serverConnection() { //TODO bug present where packets are sent double after a client disconnects and reconnects.
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
 				System.out.println("Packet received from client");
-				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), clientPort);//TODO checking bug this.packetReceiver.getReceiverPort()
+	    		if(Arrays.equals(handledPacket, this.BROADCAST.getBytes())) {
+	    			System.out.println("Sending broadcast acknowledgement"); //TODO not reached, something does not match
+	        		byte[] broadcastPacket= new byte[0];
+	        		DatagramPacket broadcast = new DatagramPacket(broadcastPacket, 0, this.packetReceiver.getReceiverAddress(), this.packetReceiver.getReceiverPort());
+	        		socket.send(broadcast);
+	    		} else {		
+	    			inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), clientPort);//TODO checking bug this.packetReceiver.getReceiverPort()
+	    		}
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();
 			}
 		}
 	}
+	
+	
+    /**
+     * @deprecated
+     * Wait on a reply from the client, before initiating.
+     */
+    public void connectionSetup() {//TODO move this to the standard receive function, otherwise connection is only possible once.
+    	while(listening) {
+    		try {
+				socket.receive(this.broadcastACK);
+				byte[] test1 = this.BROADCAST.getBytes();
+				byte[] test2 = this.broadcastACK.getData();
+	    		if(Arrays.equals(this.broadcastACK.getData(), this.BROADCAST.getBytes())) {
+	    			System.out.println("Sending broadcast acknowledgement"); //TODO not reached, something does not match
+	        		byte[] broadcastPacket= new byte[0];
+	        		DatagramPacket broadcast = new DatagramPacket(broadcastPacket, 0, this.broadcastACK.getAddress(), this.broadcastACK.getPort());
+	        		socket.send(broadcast);
+	    		} else {
+	    			listening = false;
+	    		}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+    	}
+    }
+    
 
 }

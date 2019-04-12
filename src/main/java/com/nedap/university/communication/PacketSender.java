@@ -97,13 +97,15 @@ public class PacketSender extends Thread{ //TODO perhaps better as a method, but
 	public void addToQueue(List<byte[]> list) {//TODO check for errors
 		for(byte[] i : list) {
 			this.sendingQueue.add(buildDatagram(this.sendingAddress, this.sendingPort, i));
+			//System.out.println("Item from Packetlist added to queue.");
 		}
+		//System.out.println("Packetlist added to queue.");
 	}	
 
 	
 	public void addToQueue(byte[] array) {
 		this.sendingQueue.add(buildDatagram(this.sendingAddress, this.sendingPort, array));
-
+		//System.out.println("Packet added to queue.");
 	}
 	
 }
