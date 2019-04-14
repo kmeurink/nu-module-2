@@ -3,9 +3,13 @@ package com.nedap.university.communication;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
+
+import javax.swing.JList;
 
 import com.nedap.university.utilities.FlagBytes;
 import com.nedap.university.utilities.InputCommands;
@@ -19,7 +23,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	//Named Constants:
 	private PacketBuilder inputPacket;
 	private PacketBuilder outputPacket;
-	private int headerSize = 16; //TODO make changeable eventually
+	private int headerSize = 22; //TODO make changeable eventually
 	private int packetSize = 1024;//TODO make changeable eventually
     private InetAddress BROADCAST;
     private InetAddress server;
@@ -28,6 +32,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
     private PacketSender packetSender;
     private DatagramSocket socket;
     private FileListCompiler fileNameHandler;
+    private String[] currentAvailableFiles;
     
 	//Constructors:
 	public InputHandler(DatagramSocket socket, InetAddress server, int serverPort) throws UnknownHostException {
@@ -77,9 +82,10 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 		//List function options:
 		case (byte) 33: //SYN/LIST
 			System.out.println("Command tree: SYN/LIST");
-			dataList = commands.listRequest();
+			commands.listRequest();
+			data = commands.getListPart();
 			//System.out.println("Filename list size" + dataList.size());
-			packetSender.addToQueue(dataList);
+			packetSender.addToQueue(data);
 			break;
 		case (byte) 35: //SYN/LIST/ACK
 			System.out.println("Command tree: SYN/LIST/ACK");
@@ -202,6 +208,8 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	 * Sends list request to server.
 	 */
 	public void getList() {//TODO perhaps move to other class?
+		this.outputPacket.clearData();
+		this.outputPacket.clearHeader();
 		this.outputPacket.setFlags(FlagBytes.SYNLIST);
 		this.outputPacket.setCheckSum(outputPacket.calculateCheckSum(outputPacket.getCRCFile()));
 		byte[] outputData = this.outputPacket.getPacket();
@@ -244,11 +252,61 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	        String[] allNamesReceived;
 	        receivedNames = new String(reconvertedNamesList);
 	        allNamesReceived =receivedNames.split(concat);
+	        currentAvailableFiles = allNamesReceived;
 	        for (String i : allNamesReceived) {
 	            System.out.println(i);
 	        }
 	        nameListByte.clear();
        }
 	}
+	
+	/**
+	 * Sends download request to server, first showing the available files and querying the user for the filename.
+	 */
+	public void downloadFile(Scanner userIn) { //TODO not very optimized, needs simplification.
+		System.out.println("Please type the name of the file you would like to download: ");
+		getList();
+		String fileName = userIn.nextLine();
+		byte[] fileNameByteVersion = fileName.getBytes();
+		int fileNameLength = fileName.length();
+		ByteBuffer b = ByteBuffer.allocate(4);
+		b.putInt(fileNameLength);
+		byte[] fileNameLengthBytes = b.array();
+		this.outputPacket.setData(concat(fileNameLengthBytes, fileNameByteVersion));
+		this.outputPacket.setFlags(FlagBytes.SYNDOWN);
+		this.outputPacket.setCheckSum(outputPacket.calculateCheckSum(outputPacket.getCRCFile()));
+		byte[] outputData = this.outputPacket.getPacket();
+		packetSender.addToQueue(outputData);
+	}
+	
+	/**
+	 * Sends upload request to server, first querying user to select the file to upload.
+	 */
+	public void uploadFile() {
+		
+	}
 
+	
+	private byte[] concat(byte[]...arrays)
+	{
+	    // Determine the length of the result array
+	    int totalLength = 0;
+	    for (int i = 0; i < arrays.length; i++)
+	    {
+	        totalLength += arrays[i].length;
+	    }
+
+	    // create the result array
+	    byte[] result = new byte[totalLength];
+
+	    // copy the source arrays into the result array
+	    int currentIndex = 0;
+	    for (int i = 0; i < arrays.length; i++)
+	    {
+	        System.arraycopy(arrays[i], 0, result, currentIndex, arrays[i].length);
+	        currentIndex += arrays[i].length;
+	    }
+
+	    return result;
+	}
 }

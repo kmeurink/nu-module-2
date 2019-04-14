@@ -11,6 +11,7 @@ import java.util.Scanner;
 
 import com.nedap.university.communication.InputHandler;
 import com.nedap.university.communication.PacketReceiver;
+import com.nedap.university.communication.TransferProtocol;
 
 //TODO determine what distinguishes server and client, otherwise they should be combined.
 public class FileServer_ClientSide {
@@ -23,16 +24,18 @@ public class FileServer_ClientSide {
 	private DatagramPacket broadcast = new DatagramPacket(broadcastPacket, broadcastPacket.length, BROADCASTaddress, serverPort);
 	private DatagramPacket broadcastACK = new DatagramPacket(broadcastPacket, broadcastPacket.length, BROADCASTaddress, serverPort); 
     private DatagramSocket socket = new DatagramSocket(clientPort);
-    
+    private TransferProtocol reliableSender;
 	private InetAddress serverAddress;
 	private boolean finished = false;
 	private boolean userFinished = false;
     private PacketReceiver packetReceiver;
 	private InputHandler inputHandler;
     private boolean broadcasting = true;
+    private Scanner userIn;
     
 	//Constructors:
     public FileServer_ClientSide() throws SocketException, UnknownHostException {
+    	this.reliableSender = new TransferProtocol(socket);
 		socket.setSoTimeout(2000);
 		packetReceiver = new PacketReceiver(socket);
 		this.serverAddress = InetAddress.getByName("localhost");//TODO for testing
@@ -116,7 +119,9 @@ public class FileServer_ClientSide {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
 				System.out.println("Packet received from server, flag: " + handledPacket[10]); //TODO for testing
-				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), serverPort);
+				this.reliableSender.setAddress(this.packetReceiver.getReceiverAddress());
+				this.reliableSender.setPort(serverPort);
+				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), serverPort); //TODO add to receive queue of transfer protocol
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();
 			}
@@ -143,7 +148,7 @@ public class FileServer_ClientSide {
 	 * @throws InterruptedException 
 	 */
 	public void listenLoop(Scanner scan) {
-		Scanner userIn = scan;
+		userIn = scan;
 		while (!userFinished) { 
 			printTUI();
 			handleInput(userIn.nextLine());
@@ -185,9 +190,11 @@ public class FileServer_ClientSide {
 			this.inputHandler.getList();//TODO list function does not have acks to confirm full delivery
 		} else if (input.equals("3")) {
 			System.out.println("Sorry this command has not yet been implemented.");
+			this.inputHandler.downloadFile(userIn);
 		} else if (input.equals("4")) {
 			//TODO implement selector, to find the file that needs to be uploaded.
 			System.out.println("Sorry this command has not yet been implemented.");
+			this.inputHandler.uploadFile();
 		} else if (input.equals("5")) {
 			System.out.println("Sorry this command has not yet been implemented.");
 		}

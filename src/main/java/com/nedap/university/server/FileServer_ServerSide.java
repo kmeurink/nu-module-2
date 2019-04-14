@@ -14,6 +14,7 @@ import java.util.List;
 
 import com.nedap.university.communication.InputHandler;
 import com.nedap.university.communication.PacketReceiver;
+import com.nedap.university.communication.TransferProtocol;
 
 public class FileServer_ServerSide {
 
@@ -31,11 +32,13 @@ public class FileServer_ServerSide {
 	private InputHandler inputHandler;
 	private byte[] broadcastAckPacket= new byte[15];
 	private DatagramPacket broadcastACK = new DatagramPacket(broadcastAckPacket, broadcastAckPacket.length, BROADCASTaddress, serverPort);// 
-	
+    private TransferProtocol reliableSender;
+
 	//Constructors:	
     public FileServer_ServerSide(int port) throws SocketException, UnknownHostException {
         socket = new DatagramSocket(port);
 		packetReceiver = new PacketReceiver(socket);
+    	this.reliableSender = new TransferProtocol(socket);
 		this.clientAddress = InetAddress.getByName("localhost");//TODO for testing
 		inputHandler = new InputHandler(socket, clientAddress, clientPort);
     }
@@ -107,8 +110,10 @@ public class FileServer_ServerSide {
 	        		byte[] broadcastPacket= new byte[0];
 	        		DatagramPacket broadcast = new DatagramPacket(broadcastPacket, 0, this.packetReceiver.getReceiverAddress(), this.packetReceiver.getReceiverPort());
 	        		socket.send(broadcast);
-	    		} else {		
-	    			inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), clientPort);//TODO checking bug this.packetReceiver.getReceiverPort()
+	    		} else {
+					this.reliableSender.setAddress(this.packetReceiver.getReceiverAddress());
+					this.reliableSender.setPort(clientPort);
+	    			inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), clientPort);//TODO add to receive queue of transfer protocol
 	    		}
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();

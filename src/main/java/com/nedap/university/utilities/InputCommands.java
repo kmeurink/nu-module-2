@@ -12,10 +12,11 @@ public class InputCommands {
 	private PacketBuilder headerConstructor;
 	private String directory = "C:/Users/kester.meurink/Nedap university/module 2/assignment/";
 	private List<byte[]> packetsToSend;
+	private List<byte[]> fileNamesList;
 	private int headerSize = 16; //TODO make changeable eventually
 	private int packetSize = 1024;//TODO make changeable eventually
 	private byte[] replyPacket; 
-	
+	private short nonDownloadFileNumber = 0;
 	//Constructors:
 	public InputCommands() {
 		this.headerConstructor = new PacketBuilder(headerSize, packetSize);
@@ -29,13 +30,14 @@ public class InputCommands {
 	
 	//Commands:
 	
-	//List function commands:
+	//List function commands: TODO change structure to create list and then be able to get parts of the list instead of the whole one.
 	/**
 	 * Reacts to the list function sent by the user, by compiling the list of available files.
 	 * @return
 	 */
-	public List<byte[]> listRequest() { //TODO improve structure and test
-		packetsToSend = new ArrayList<byte[]>();
+	public void listRequest() { //TODO improve structure and test
+		fileNamesList = new ArrayList<byte[]>();
+		int seqNum = 1;
         File file = new File(directory);//TODO change directory for pi
     	//Add all file names together in a byte array.
         byte[] nameByte;
@@ -73,10 +75,21 @@ public class InputCommands {
         	} else {
         		headerConstructor.setFlags(FlagBytes.SYNLISTACKFIN);
         	}
+        	headerConstructor.setFileNumber(nonDownloadFileNumber);
+        	headerConstructor.setAckNumber(seqNum);
+        	seqNum++;
         	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));//TODO this seems a bit ridiculous, replace by a simpler version?
-            packetsToSend.add(headerConstructor.getPacket());
+        	fileNamesList.add(headerConstructor.getPacket());
         }
-        return packetsToSend;
+	}
+	
+	public byte[] getListPart() {
+		byte[] fileName = null;
+		if(!this.fileNamesList.isEmpty()) {
+			fileName = this.fileNamesList.get(0);
+			this.fileNamesList.remove(0);
+		}
+		return fileName;
 	}
 	
 	public byte[] listAcknowledgement() { 
