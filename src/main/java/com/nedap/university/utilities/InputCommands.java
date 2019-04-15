@@ -76,13 +76,17 @@ public class InputCommands {
         		headerConstructor.setFlags(FlagBytes.SYNLISTACKFIN);
         	}
         	headerConstructor.setFileNumber(nonDownloadFileNumber);
-        	headerConstructor.setAckNumber(seqNum);
+        	headerConstructor.setSeqNumber(seqNum);
         	seqNum++;
         	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));//TODO this seems a bit ridiculous, replace by a simpler version?
         	fileNamesList.add(headerConstructor.getPacket());
         }
 	}
 	
+	/**
+	 * Returns a part of the list which is null if all parts have already been retrieved.
+	 * @return byte[] fileName
+	 */
 	public byte[] getListPart() {
 		byte[] fileName = null;
 		if(!this.fileNamesList.isEmpty()) {
@@ -92,29 +96,31 @@ public class InputCommands {
 		return fileName;
 	}
 	
-	public byte[] listAcknowledgement() { 
-    	headerConstructor.clearData();
+	public byte[] listAcknowledgement(int seq) { 
+		System.out.println("Received acknowledgement of the list arrival");
+		headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.LISTACK);
-    	System.out.println("Received acknowledgement of the list arrival");
+    	headerConstructor.setAckNumber(seq);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
         replyPacket = headerConstructor.getPacket();
         return replyPacket;
         }
 	
-	public byte[] listFinalAcknowledgement() {
-    	headerConstructor.clearData();
-    	headerConstructor.clearHeader();
-    	headerConstructor.setFlags(FlagBytes.LISTACK);
+	public byte[] listFinalAcknowledgement(int seq) {
     	System.out.println("Received final acknowledgement of the list request");
+    	headerConstructor.clearData();
+    	headerConstructor.clearHeader();
+    	headerConstructor.setFlags(FlagBytes.LISTACK);
+    	headerConstructor.setAckNumber(seq);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
         replyPacket = headerConstructor.getPacket();
         return replyPacket;
         }
 	
-	public byte[] listReceivedAcknowledgement() {
+	public void listReceivedAcknowledgement() {
     	//TODO only internal, does not send info back. Probably something with cancelling a timeout to retransmit.
-		return null;
+		System.out.println("Server: List received acknowledgement received. Sending next part.");
 	}
 	//Pause function commands:
 	

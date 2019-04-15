@@ -39,8 +39,9 @@ public class FileServer_ServerSide {
         socket = new DatagramSocket(port);
 		packetReceiver = new PacketReceiver(socket);
     	this.reliableSender = new TransferProtocol(socket);
+    	this.reliableSender.start();
 		this.clientAddress = InetAddress.getByName("localhost");//TODO for testing
-		inputHandler = new InputHandler(socket, clientAddress, clientPort);
+		inputHandler = new InputHandler(socket, clientAddress, clientPort, reliableSender);
     }
  
     public static void main(String[] args) {
@@ -113,7 +114,8 @@ public class FileServer_ServerSide {
 	    		} else {
 					this.reliableSender.setAddress(this.packetReceiver.getReceiverAddress());
 					this.reliableSender.setPort(clientPort);
-	    			inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), clientPort);//TODO add to receive queue of transfer protocol
+					this.reliableSender.addToReceivingQueue(handledPacket);
+	    			//inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), clientPort);//TODO add to receive queue of transfer protocol
 	    		}
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();

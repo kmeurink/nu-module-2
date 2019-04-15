@@ -3,6 +3,7 @@ package com.nedap.university.communication;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.zip.CRC32;
 
@@ -52,12 +53,15 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * Returns the fileNumber as an array of bytes.
 	 * @return
 	 */
-	public byte[] getFileNumber() {
+	public short getFileNumber() {
+		short fileNum = 0;
 		byte[] fileNumberArray = new byte[2];
 		for (int i = fileNumberStartIndex; i < seqStartIndex; i++) {
 			fileNumberArray[i - fileNumberStartIndex] = this.packetArrayTotal.clone()[i];
 		}
-		return fileNumberArray;
+		ByteBuffer buffer = ByteBuffer.wrap(fileNumberArray);
+		fileNum = buffer.getShort();
+		return fileNum;
 	}
 	
 	/**
@@ -65,26 +69,30 @@ public class PacketBuilder { //TODO Should have methods to change the header, ad
 	 * @param i
 	 * @return
 	 */
-	public byte[] getSeqNumber() {
+	public int getSeqNumber() {
+		int seqNum = 0;
 		byte[] seqNumberArray = new byte[4];
 		for (int i = seqStartIndex; i < ackStartIndex; i++) {
 			seqNumberArray[i - seqStartIndex] = this.packetArrayTotal.clone()[i];
 		}
-		
-		return seqNumberArray;
+		ByteBuffer buffer = ByteBuffer.wrap(seqNumberArray);
+		seqNum = buffer.getInt();
+		return seqNum;
 	}
 	
 	/**
 	 * Returns the ackNumber as an array of bytes.
 	 * @return
 	 */
-	public byte[] getAckNumber() {
+	public int getAckNumber() {
+		int ackNum = 0;
 		byte[] ackNumberArray = new byte[4];
 		for (int i = ackStartIndex; i < flagStartIndex; i++) {
 			ackNumberArray[i - ackStartIndex] = this.packetArrayTotal.clone()[i];
 		}
-		
-		return ackNumberArray;		
+		ByteBuffer buffer = ByteBuffer.wrap(ackNumberArray);
+		ackNum = buffer.getInt();
+		return ackNum;		
 	}
 	
 	/**

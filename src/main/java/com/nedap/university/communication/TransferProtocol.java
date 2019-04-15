@@ -6,9 +6,15 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+
+import com.nedap.university.utilities.FlagBytes;
 import com.nedap.university.utilities.InputCommands;
 
 /**
@@ -23,7 +29,9 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
     static final int DATASIZE=1024;   // max. number of data bytes in each packet
     static final int TIMEOUTDELAY=500;   // time in ms before a packet is retransmitted.
     private int seqNum = 0;
+    private int ackNum = 0;
     private byte[] lastPacketSent; //TODO place the last packet sent here.
+    private byte[] lastPacketAcked;
     private DatagramSocket socket;
     private BlockingQueue<byte[]> sendingQueue;
     private List<byte[]> sentPacketList;
@@ -33,10 +41,12 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
     private int receiverPort;
     private InputCommands commands;
     private FileListCompiler fileNameHandler;
-
-
-    
+    private Timer packetTimer;
+    private TimerTask timeoutTask;
+    private Map<Short, Map<Integer, TimerTask>> timeOutList;
+    private boolean packetTimerset = false;
     private int queueLength = 1000;
+    private long retransmissionTime = 5000L;
     private byte[] lastPacketReceived; //TODO place the last packet received here.
     private String[] currentAvailableFiles;
 
@@ -51,6 +61,7 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
     
     //Constructors:
     public TransferProtocol(DatagramSocket socket) {
+    	this.timeOutList = new HashMap<>();
     	this.socket = socket;
     	this.sendingQueue = new ArrayBlockingQueue<byte[]>(queueLength);
     	this.receivingQueue = new ArrayBlockingQueue<byte[]>(queueLength);
@@ -60,30 +71,53 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
     	this.sentPacketAnalyzer = new PacketBuilder(HEADERSIZE, DATASIZE);
     	this.commands = new InputCommands();
 		this.fileNameHandler = new FileListCompiler();
+		this.packetTimer = new Timer();
     }
     
     public void run() {//TODO make it running all the time taking from the receiving queue and then sending.
     	while (true) {
     		//TODO should call sender and receiver.
+    		sender();
+    		receiver();
     	}
     }
     
     public void sender() {
-        System.out.println("Sending...");
+        //System.out.println("Sending...");
     
         // read from the input file
         //TODO Check what has already been sent(check against window).
         //TODO If the window has been filled, in this case if one packet has been sent. Do not sent another packet.
         if (sentPacketList.size() < maxPackets) {
             //TODO If the receiver okays the received packet a new packet can be sent, this is taken from the sending queue.
-        	byte[] packetToSend = this.sendingQueue.take();
-        	socket.send(buildDatagram(this.receiverAddress, this.receiverPort, packetToSend));
-        }
-    	//TODO for this packet a new time out must be started which is also given the packet so that it is able to retransmit it.
-        //TODO This sending queue is filled by the user functions of the client and by the reaction of the receiver to its received packet.
+        	byte[] packetToSend;
+			try {
+				if (!this.sendingQueue.isEmpty()) {
+					packetToSend = this.sendingQueue.take();
+		        	this.lastPacketSent = packetToSend.clone();
+		        	this.sentPacketAnalyzer.setPacket(lastPacketSent);
+		        	socket.send(buildDatagram(this.receiverAddress, this.receiverPort, packetToSend));
+		        	//TODO for this packet a new time out must be started which is also given the packet so that it is able to retransmit it.
+		            //TODO This sending queue is filled by the user functions of the client and by the reaction of the receiver to its received packet.
 
-            //TODO schedule a timer, to ensure the packet is retransmitted if it never receives an ack.
-            client.Utils.Timeout.SetTimeout(TIMEOUTDELAY, this, this.lastFrameSent);
+		            //TODO schedule a timer, to ensure the packet is retransmitted if it never receives an ack. But not if it is an ack itself.
+		        	if(sendPacketTimerAllowed()) {
+		        		timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber());
+			        	this.packetTimer.schedule(timeoutTask, retransmissionTime);
+			        	packetTimerset = true;
+		        	}
+				} else {
+					Thread.sleep(500);
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+        }
     }
     
 	/**
@@ -95,39 +129,37 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 		DatagramPacket packetToSend = new DatagramPacket(packet, packet.length, receiver, receiverPort);
 		return packetToSend;
 	}
-    
-    public void TimeoutElapsed(Object tag) {
-        int z=(Integer)tag;
-        // handle expiration of the timeout:
-        if (this.seqNum == z) {
-        	//Retransmit packet and restart timer.
-            getNetworkLayer().sendPacket(this.lastPacketSent);
-            packetsSent++;
-            client.Utils.Timeout.SetTimeout(TIMEOUTDELAY, this, z);
-            System.out.println("Acknowledgement not received, tag = " + z);
-        }
-    }
-
-    
+        
     public void receiver() {
-        System.out.println("Receiving...");
+        //System.out.println("Receiving...");
         //TODO here take from the received packet queue to which received packets can be put.
         try {
-			this.lastPacketReceived = this.receivingQueue.take();
-	        this.receivedPacketAnalyzer.setPacket(lastPacketReceived);
-	        if(PacketFlagSelection()) {
-	        	//TODO cancel timer and sent new packet
-	        } //TODO otherwise nothing should happen, and the timer should run out.
+        	byte[] packetReceived;
+        	if (!this.receivingQueue.isEmpty()) {
+    			packetReceived = this.receivingQueue.take();
+    			this.lastPacketReceived = packetReceived.clone();
+    	        //TODO then read out this packet using a packetBuilder
+    			//TODO also check if it is the same packet as the last acked, this then means the ack was not received and a old one has to be re-sent.
+    	        this.receivedPacketAnalyzer.setPacket(packetReceived);
+    	        //TODO use the format of the input handler or move its methods here to determine what to do with the packet.
+    	        // The input handler must somehow return the result of the packet comparison, if it is an expected packet cancel the retransmit timer.
+    	        // if it is not, then if it is an earlier packet an ack must also be sent, but this is mainly important for a sliding window expansion.
+    	        // The expected packet must be processed and the packet resulting from it must be added to the send queue.
+    	        if(PacketFlagSelection()) {
+    	        	//TODO if a timer has been set, cancel timer and allow for a new packet to be sent.
+		        	if(packetTimerset) {
+		        		timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber());
+	    	        	this.timeOutList.get(this.sentPacketAnalyzer.getFileNumber()).get(this.sentPacketAnalyzer.getSeqNumber()).cancel();
+		        	}
+    	        	this.sentPacketList.remove(this.lastPacketSent);
+    	        } //TODO otherwise nothing should happen, and the timer should run out.
+        	} else {
+        		Thread.sleep(500);
+        	}
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        //TODO then read out this packet using a packetBuilder
-        //TODO use the format of the inputhandler or move its methods here to determine what to do with the packet.
-        // The inputhandler must somehow return the result of the packet comparison, if it is an expected packet cancel the retransmit timer.
-        // if it is not, then if it is an earlier packet an ack must also be sent, but this is mainly important for a sliding window expansion.
-        // The expected packet must be processed and the packet resulting from it must be added to the send queue.
-        PacketFlagSelection();
     }
     
     
@@ -137,6 +169,20 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
     
     public void setPort(int port) {
     	this.receiverPort = port;
+    }
+    
+    /**
+     * Determines if the packet sent requires a timer to be set for its retransmission.
+     * @return
+     */
+    public boolean sendPacketTimerAllowed() {
+    	boolean setTimer = false;
+    	if (sentPacketAnalyzer.getFlags() != FlagBytes.LISTACK && sentPacketAnalyzer.getFlags() != FlagBytes.PAUACK && sentPacketAnalyzer.getFlags() != FlagBytes.ACKDOWN 
+    			&& sentPacketAnalyzer.getFlags() != FlagBytes.UPACK && sentPacketAnalyzer.getFlags() != FlagBytes.FINDOWNACK && sentPacketAnalyzer.getFlags() != FlagBytes.FINUPACK 
+    			&& sentPacketAnalyzer.getFlags() != FlagBytes.STOPACK) {
+    		setTimer = true;
+    	}
+    	return setTimer;
     }
     
     //packet header analysis methods:
@@ -156,34 +202,44 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 		byte command = receivedPacketAnalyzer.getFlags();
 		switch(command) { //TODO add actions
 		//List function options:
-		case (byte) 33: //SYN/LIST
+		case (byte) 33: //SYN/LIST server side.
 			System.out.println("Command tree: SYN/LIST");
-			commands.listRequest();
-			data = commands.getListPart();
-			if (data != null) {
-				this.sendingQueue.add(data);
+			if (this.receivedPacketAnalyzer.getAckNumber() == 0 && this.receivedPacketAnalyzer.getSeqNumber() == 0 && this.receivedPacketAnalyzer.getFileNumber() == 0) {
+				correctPacket = true;
+				commands.listRequest();
+				data = commands.getListPart();
+				if (data != null) {
+					addToSendingQueue(data);
+				}
 			}
 			//System.out.println("Filename list size" + dataList.size());
 			break;
-		case (byte) 35: //SYN/LIST/ACK
+		case (byte) 35: //SYN/LIST/ACK client side.
 			System.out.println("Command tree: SYN/LIST/ACK");
-			//TODO collect data
-			this.fileNameHandler.addToList(this.receivedPacketAnalyzer.getData());
-			data = commands.listAcknowledgement();
-			this.sendingQueue.add(data);
+			if (this.receivedPacketAnalyzer.getAckNumber() == 0 && this.receivedPacketAnalyzer.getSeqNumber() == (this.sentPacketAnalyzer.getAckNumber() + 1) && this.receivedPacketAnalyzer.getFileNumber() == 0) {
+				correctPacket = true;
+				this.fileNameHandler.addToList(this.receivedPacketAnalyzer.getData());
+				data = commands.listAcknowledgement(this.receivedPacketAnalyzer.getSeqNumber());
+				addToSendingQueue(data);
+			}
 			break;
-		case (byte) 39: //SYN/LIST/ACK/FIN
+		case (byte) 39: //SYN/LIST/ACK/FIN client side.
 			System.out.println("Command tree: SYN/LIST/ACK/FIN");
-    		//TODO collect last piece of data and add together to print out list given
-			this.fileNameHandler.addToList(this.receivedPacketAnalyzer.getData());
-			this.fileNameHandler.compileList();
-			data = commands.listFinalAcknowledgement();
-			this.sendingQueue.add(data);
-			break;
-		case (byte) 34: //LIST/ACK
-			System.out.println("Command tree: LIST/ACK");
-			commands.listReceivedAcknowledgement();
+			if (this.receivedPacketAnalyzer.getAckNumber() == 0 && this.receivedPacketAnalyzer.getSeqNumber() == (this.sentPacketAnalyzer.getAckNumber() + 1) && this.receivedPacketAnalyzer.getFileNumber() == 0) {
+				correctPacket = true;
+				this.fileNameHandler.addToList(this.receivedPacketAnalyzer.getData());
+				this.fileNameHandler.compileList();
+				data = commands.listFinalAcknowledgement(this.receivedPacketAnalyzer.getSeqNumber());
+				addToSendingQueue(data);
+			}	
 
+			break;
+		case (byte) 34: //LIST/ACK server side.
+			System.out.println("Command tree: LIST/ACK");
+			if (this.receivedPacketAnalyzer.getAckNumber() == this.sentPacketAnalyzer.getSeqNumber() && this.receivedPacketAnalyzer.getFileNumber() == 0) {
+				correctPacket = true;
+				commands.listReceivedAcknowledgement();
+			}
 			break;
 		//Pause function options:
 		case (byte) 65: //PAUSE/SYN
@@ -333,6 +389,7 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
      * @param packet
      */
     public void addToSendingQueue(byte[] packet) {
+    	System.out.println("Packet added to sending queue.");
     	this.sendingQueue.add(packet);
     }
     
@@ -340,7 +397,48 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
      * Method for the socket to add its received packets to the queue.
      * @param packet
      */
-    public void addToReceivingQueue(byte[] packet, InetAddress addr, int port) {
+    public void addToReceivingQueue(byte[] packet) {//, InetAddress addr, int port
+    	System.out.println("Packet added to receiving queue.");
     	this.receivingQueue.add(packet);
+    }
+    
+    //Timer methods:
+    
+    private class PacketTimeout extends TimerTask {
+    	private byte[] packet;
+    	private short fileNum;
+    	private int seqNum;
+    	
+    	public PacketTimeout(byte[] packet, short fileNum, int seqNum) {
+    		this.packet = packet;
+    		this.fileNum = fileNum;
+    		this.seqNum = seqNum;
+    		Map<Integer, TimerTask> tempMap= new HashMap<>();
+    		tempMap.put(seqNum, this);
+    		timeOutList.put(fileNum, tempMap);
+    	}
+
+		@Override
+		public void run() {
+			System.out.println("Retransmitting packet. Filenumber: " + fileNum + " Seqnumber: " + seqNum + " Acknumber: " + ackNum);
+			setTask();
+			
+		}
+    	
+		public void setTask() {
+			try {
+				timeOutList.get(fileNum).remove(seqNum);
+				TimerTask reTask = new PacketTimeout(packet, fileNum, seqNum);
+				socket.send(buildDatagram(receiverAddress, receiverPort, packet));
+	    		Map<Integer, TimerTask> tempMap= new HashMap<>();
+	    		tempMap.put(seqNum, reTask);
+	    		timeOutList.put(fileNum, tempMap);
+	        	packetTimer.schedule(reTask, retransmissionTime);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
     }
 }

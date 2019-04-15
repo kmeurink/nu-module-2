@@ -88,20 +88,17 @@ public class PacketBuilderTest {
 	//First testing the queries:
 	@Test
 	public void testGetFileNumber() {
-		assertEquals(2, testBuilder.getFileNumber().length);
-		assertTrue(this.checkContents((byte) 0, testBuilder.getFileNumber()));
+		assertEquals(0, testBuilder.getFileNumber());
 	}
 	
 	@Test
 	public void testGetSeqNumber() {
-		assertEquals(4, testBuilder.getSeqNumber().length);
-		assertTrue(this.checkContents((byte) 0, testBuilder.getSeqNumber()));
+		assertEquals(0, testBuilder.getSeqNumber());
 	}
 	
 	@Test
 	public void testGetAckNumber() {
-		assertEquals(4, testBuilder.getAckNumber().length);
-		assertTrue(this.checkContents((byte) 0, testBuilder.getAckNumber()));
+		assertEquals(0, testBuilder.getAckNumber());
 	}
 
 	@Test
@@ -133,34 +130,34 @@ public class PacketBuilderTest {
 	@Test
 	public void testSetFileNumber() {
 		testBuilder.setFileNumber(testFileNumber1);
-		assertArrayEquals(this.testFileNumber1Bytes, testBuilder.getFileNumber());
+		assertEquals(testFileNumber1, testBuilder.getFileNumber());
 		testBuilder.setFileNumber(testFileNumber2);
-		assertArrayEquals(this.testFileNumber2Bytes, testBuilder.getFileNumber());
+		assertEquals(testFileNumber2, testBuilder.getFileNumber());
 	}
 	
 	@Test
 	public void testSetSeqNumber() {
 		testBuilder.setSeqNumber(seqAckTest1);
-		assertArrayEquals(seqAckTest1Bytes, testBuilder.getSeqNumber());
+		assertEquals(seqAckTest1, testBuilder.getSeqNumber());
 		testBuilder.setSeqNumber(seqAckTest2);
-		assertArrayEquals(seqAckTest2Bytes, testBuilder.getSeqNumber());
+		assertEquals(seqAckTest2, testBuilder.getSeqNumber());
 		testBuilder.setSeqNumber(seqAckTest3);
-		assertArrayEquals(seqAckTest3Bytes, testBuilder.getSeqNumber());
+		assertEquals(seqAckTest3, testBuilder.getSeqNumber());
 		testBuilder.setSeqNumber(seqAckTest4);
-		assertArrayEquals(seqAckTest4Bytes, testBuilder.getSeqNumber());
+		assertEquals(seqAckTest4, testBuilder.getSeqNumber());
 		
 	}
 
 	@Test
 	public void testSetAckNumber() {
 		testBuilder.setAckNumber(seqAckTest1);
-		assertArrayEquals(seqAckTest1Bytes, testBuilder.getAckNumber());
+		assertEquals(seqAckTest1, testBuilder.getAckNumber());
 		testBuilder.setAckNumber(seqAckTest2);
-		assertArrayEquals(seqAckTest2Bytes, testBuilder.getAckNumber());
+		assertEquals(seqAckTest2, testBuilder.getAckNumber());
 		testBuilder.setAckNumber(seqAckTest3);
-		assertArrayEquals(seqAckTest3Bytes, testBuilder.getAckNumber());
+		assertEquals(seqAckTest3, testBuilder.getAckNumber());
 		testBuilder.setAckNumber(seqAckTest4);
-		assertArrayEquals(seqAckTest4Bytes, testBuilder.getAckNumber());
+		assertEquals(seqAckTest4, testBuilder.getAckNumber());
 	}
 
 	@Test

@@ -36,10 +36,11 @@ public class FileServer_ClientSide {
 	//Constructors:
     public FileServer_ClientSide() throws SocketException, UnknownHostException {
     	this.reliableSender = new TransferProtocol(socket);
+    	this.reliableSender.start();
 		socket.setSoTimeout(2000);
 		packetReceiver = new PacketReceiver(socket);
 		this.serverAddress = InetAddress.getByName("localhost");//TODO for testing
-		inputHandler = new InputHandler(socket, serverAddress, serverPort); //TODO create method to set them, instead of on boot?
+		inputHandler = new InputHandler(socket, serverAddress, serverPort, reliableSender); //TODO create method to set them, instead of on boot?
     }
     
     public static void main(String[] args) {
@@ -86,6 +87,8 @@ public class FileServer_ClientSide {
 				//System.out.println("client reply sent.");
 				broadcasting = false;
 				inputHandler.bindAddress(serverAddress);
+				reliableSender.setAddress(serverAddress);
+				this.reliableSender.setPort(serverPort);
 				socket.setSoTimeout(0);
 			} catch (SocketTimeoutException e) {
 				System.out.println("Failed to connect, retrying.");
@@ -121,7 +124,8 @@ public class FileServer_ClientSide {
 				System.out.println("Packet received from server, flag: " + handledPacket[10]); //TODO for testing
 				this.reliableSender.setAddress(this.packetReceiver.getReceiverAddress());
 				this.reliableSender.setPort(serverPort);
-				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), serverPort); //TODO add to receive queue of transfer protocol
+				this.reliableSender.addToReceivingQueue(handledPacket);
+				//inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), serverPort); //TODO add to receive queue of transfer protocol
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();
 			}
@@ -190,11 +194,11 @@ public class FileServer_ClientSide {
 			this.inputHandler.getList();//TODO list function does not have acks to confirm full delivery
 		} else if (input.equals("3")) {
 			System.out.println("Sorry this command has not yet been implemented.");
-			this.inputHandler.downloadFile(userIn);
+			//this.inputHandler.downloadFile(userIn);
 		} else if (input.equals("4")) {
 			//TODO implement selector, to find the file that needs to be uploaded.
 			System.out.println("Sorry this command has not yet been implemented.");
-			this.inputHandler.uploadFile();
+			//this.inputHandler.uploadFile();
 		} else if (input.equals("5")) {
 			System.out.println("Sorry this command has not yet been implemented.");
 		}
