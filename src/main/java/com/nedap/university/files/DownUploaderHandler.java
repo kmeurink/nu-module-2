@@ -1,5 +1,6 @@
 package com.nedap.university.files;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,10 +14,12 @@ import java.util.List;
 public class DownUploaderHandler { //TODO make multithreaded? Depends on how the main function works
 	//Named constants:
 	private HashMap<Short, DownUploader> downUploaders;
+	private File directory;
 	
 	//Constructors:
-	public DownUploaderHandler() {
+	public DownUploaderHandler(File directory) {
 		downUploaders = new HashMap<Short, DownUploader>();
+		this.directory = directory;
 	}
 	
 	
@@ -75,11 +78,12 @@ public class DownUploaderHandler { //TODO make multithreaded? Depends on how the
 	 * @param fileName
 	 * @param fileNumber
 	 */
-	public void createDownload(String fileName, short fileNumber, boolean client) {
+	public void createDownload(String fileName, short fileNumber, boolean client, boolean down) {
 		DownUploader newDownload = new DownUploader();
+		newDownload.setDirectory(directory);
 		newDownload.setFileNumber(fileNumber);
 		newDownload.setName(fileName, client);
-		newDownload.setStatus(true);
+		newDownload.setStatus(down);
 		this.addDownUpload(fileNumber, newDownload);
 	}
 }

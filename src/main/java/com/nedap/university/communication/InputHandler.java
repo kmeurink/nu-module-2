@@ -1,5 +1,6 @@
 package com.nedap.university.communication;
 
+import java.io.File;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -25,11 +26,6 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	private PacketBuilder outputPacket;
 	private int headerSize = 22; //TODO make changeable eventually
 	private int packetSize = 1024;//TODO make changeable eventually
-    private InetAddress BROADCAST;
-    private InetAddress server;
-    private InputCommands commands;
-    private PacketSender packetSender;
-    private DatagramSocket socket;
     private FileListCompiler fileNameHandler;
     private TransferProtocol sender;
     private String[] currentAvailableFiles;
@@ -39,18 +35,17 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	private static int serverPort = 8080;
     
 	//Constructors:
-	public InputHandler(DatagramSocket socket, InetAddress server, int serverPort, TransferProtocol sender) throws UnknownHostException {
-		this.socket = socket;
-		this.server = server;
-		this.serverPort = serverPort;
+	public InputHandler(TransferProtocol sender) throws UnknownHostException {
+		//this.server = server;
+		//this.serverPort = serverPort;
 		this.sender = sender;
-		inputPacket = new PacketBuilder(headerSize, packetSize);
+		//inputPacket = new PacketBuilder(headerSize, packetSize);
 		outputPacket= new PacketBuilder(headerSize, packetSize);
 		this.fileNameHandler = new FileListCompiler();
-		this.BROADCAST = InetAddress.getByName("255.255.255.255");
-		commands = new InputCommands();
-		packetSender = new PacketSender(this.socket, this.server, this.serverPort);
-		packetSender.start();
+		//this.BROADCAST = InetAddress.getByName("255.255.255.255");
+		//commands = new InputCommands(directory);
+		//packetSender = new PacketSender(this.socket, this.server, this.serverPort);
+		//packetSender.start();
 	}
 	
 	//Queries:
@@ -113,8 +108,10 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	        receivedNames = new String(reconvertedNamesList);
 	        allNamesReceived =receivedNames.split(concat);
 	        currentAvailableFiles = allNamesReceived;
+	        int count = 0;
 	        for (String i : allNamesReceived) {
-	            System.out.println(i);
+	            System.out.println(count + " : " + i);
+	            count++;
 	        }
 	        nameListByte.clear();
        }
@@ -128,25 +125,41 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 		getList();
 		String fileName = userIn.nextLine();
 		byte[] fileNameByteVersion = fileName.getBytes();
-		int fileNameLength = fileName.length();
-		ByteBuffer b = ByteBuffer.allocate(4);
-		b.putInt(fileNameLength);
-		byte[] fileNameLengthBytes = b.array();
+		byte[] fileNameLengthBytes = InputCommands.intToBytes(fileName.length());
+		this.outputPacket.clearData();
+		this.outputPacket.clearHeader();
 		this.outputPacket.setData(InputCommands.concat(fileNameLengthBytes, fileNameByteVersion));
 		this.outputPacket.setAckNumber(0);
 		this.outputPacket.setSeqNumber(0);
-		this.outputPacket.setFileNumber((short) 1); //TODO select available file number.
+		this.outputPacket.setFileNumber((short) sender.getAvailableFileNumber()); //TODO select available file number.
 		this.outputPacket.setFlags(FlagBytes.SYNDOWN);
 		this.outputPacket.setCheckSum(outputPacket.calculateCheckSum(outputPacket.getCRCFile()));
 		byte[] outputData = this.outputPacket.getPacket();
-		packetSender.addToQueue(outputData);
+		sender.addToSendingQueue(outputData);
 	}
 	
 	/**
-	 * Sends upload request to server, first querying user to select the file to upload.
+	 * Sends upload request to server, first querying the user to select the file to upload.
 	 */
-	public void uploadFile() {
-		
+	public void uploadFile(Scanner userIn) {
+		System.out.println("Please type the name of the file you would like to upload: ");
+		System.out.println("Make sure it is present in the file directory, such that the application can find it.");
+		this.outputPacket.clearData();
+		this.outputPacket.clearHeader();
+		String fileName = userIn.nextLine();
+		byte[] fileNameByteVersion = fileName.getBytes();
+		byte[] fileNameLengthBytes = InputCommands.intToBytes(fileName.length());
+		this.outputPacket.setFileNumber((short) sender.getAvailableFileNumber()); //TODO select available file number.
+		this.sender.getFilelist().createDownload(fileName, this.outputPacket.getFileNumber(), false, false);
+		long crc = this.sender.getFilelist().getDownUploads().get(this.outputPacket.getFileNumber()).calculateFileChecksum();
+		int size = this.sender.getFilelist().getDownUploads().get(this.outputPacket.getFileNumber()).getSize();
+		this.outputPacket.setData(InputCommands.concat(fileNameLengthBytes, fileNameByteVersion, InputCommands.intToBytes(size), InputCommands.longToBytes(crc)));
+		this.outputPacket.setAckNumber(0);
+		this.outputPacket.setSeqNumber(0);
+		this.outputPacket.setFlags(FlagBytes.SYNUP);		
+		this.outputPacket.setCheckSum(outputPacket.calculateCheckSum(outputPacket.getCRCFile()));
+		byte[] outputData = this.outputPacket.getPacket();
+		sender.addToSendingQueue(outputData);
 	}
 
 }

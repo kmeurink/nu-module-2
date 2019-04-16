@@ -59,11 +59,14 @@ public class PacketReceiver {//TODO perhaps better as a method, but is used by b
             this.receiverAddress = request.getAddress();
             this.receiverPort = request.getPort();
             int dataLength = request.getLength(); //Determine the actual amount of data
+            System.out.println("packet length: " + dataLength);
             packetData = new byte[dataLength];
             byte[] totalPacket = new byte[packetSize];
             totalPacket = request.getData();
             for(int i = 0; i < dataLength; i++) { //Loop through the packet and only assign the bytes containing data.
-            	packetData[i] = totalPacket[i];
+            	//if (totalPacket[i] != null) {
+                	packetData[i] = totalPacket[i];
+            	//}
             }
 
             //TODO add perhaps a notify that notifies the handler to do something with the received packet.

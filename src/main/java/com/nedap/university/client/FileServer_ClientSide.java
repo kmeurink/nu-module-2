@@ -1,5 +1,6 @@
 package com.nedap.university.client;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -32,15 +33,17 @@ public class FileServer_ClientSide {
 	private InputHandler inputHandler;
     private boolean broadcasting = true;
     private Scanner userIn;
+    private String directory = "testFiles/written/";
+    private File fileDirectory = new File(directory);
     
 	//Constructors:
     public FileServer_ClientSide() throws SocketException, UnknownHostException {
-    	this.reliableSender = new TransferProtocol(socket);
+    	this.reliableSender = new TransferProtocol(socket, fileDirectory);
     	this.reliableSender.start();
 		socket.setSoTimeout(2000);
 		packetReceiver = new PacketReceiver(socket);
 		this.serverAddress = InetAddress.getByName("localhost");//TODO for testing
-		inputHandler = new InputHandler(socket, serverAddress, serverPort, reliableSender); //TODO create method to set them, instead of on boot?
+		inputHandler = new InputHandler(reliableSender); //TODO create method to set them, instead of on boot?
     }
     
     public static void main(String[] args) {
@@ -179,6 +182,7 @@ public class FileServer_ClientSide {
 		System.out.println("\\\\ 3 : Download a file from the server.                                                                         \\\\");
 		System.out.println("\\\\ 4 : Upload a file to the server.                                                                             \\\\");
 		System.out.println("\\\\ 5 : Show the statistics of the server connection.                                                            \\\\");
+		System.out.println("\\\\ 6 : Pause and upload or download.				                                                              \\\\");
 		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
 		System.out.println();
 		System.out.println();
@@ -188,18 +192,19 @@ public class FileServer_ClientSide {
 	 * Handling of user input.
 	 * @param input
 	 */
-	private void handleInput(String input) { //TODO actually handle the input, possibly better to do in another class?
-		if (input.equals("1")) { //TODO make connection before starting everything. So automatic.
-		} else if (input.equals("2")) {
-			this.inputHandler.getList();//TODO list function does not have acks to confirm full delivery
-		} else if (input.equals("3")) {
+	private void handleInput(String input) { 
+		if (input.equals("1")) {
 			System.out.println("Sorry this command has not yet been implemented.");
+		} else if (input.equals("2")) {
+			this.inputHandler.getList();
+		} else if (input.equals("3")) {
 			this.inputHandler.downloadFile(userIn);
 		} else if (input.equals("4")) {
 			//TODO implement selector, to find the file that needs to be uploaded.
-			System.out.println("Sorry this command has not yet been implemented.");
-			//this.inputHandler.uploadFile();
+			this.inputHandler.uploadFile(userIn);
 		} else if (input.equals("5")) {
+			System.out.println("Sorry this command has not yet been implemented.");
+		} else if (input.equals("6")) {
 			System.out.println("Sorry this command has not yet been implemented.");
 		}
 	}

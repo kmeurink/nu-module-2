@@ -24,6 +24,7 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	private String fileName;
 	private short fileNumber;
 	private int fileSize;
+	private int currentPointer = 0;
 	private List<byte[]> fileData; //TODO is list the best container?
 	private String filePath= ""; //TODO determine how to choose this.
 	private File file;
@@ -200,7 +201,13 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	 */
 	public void writeFilePart(byte[] data) {
 		try {
-			fos.write(data);
+			//byte[] tempStorage = data;
+			//for (int i = 0; i < data.length; i++) {
+			//	if(tempStorage[i] != (byte) 0) {
+					fos.write(data);
+			//	}
+			//}
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -289,7 +296,7 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 		byte[] name = this.getName().getBytes();
 		byte[] dataLength = InputCommands.intToBytes(this.getSize());
 		byte[] crc = InputCommands.longToBytes(this.calculateFileChecksum());
-		init = InputCommands.concat(init, nameLength, dataLength, crc);
+		init = InputCommands.concat(nameLength, name, dataLength, crc);
 		return init;
 	}
 	
@@ -360,6 +367,14 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 		}
 		
 		return checkSum.getValue();
+	}
+
+	/**
+	 * Sets the file directory to the selected location.
+	 * @param directory
+	 */
+	public void setDirectory(File directory) {
+		this.fileDirectory = directory;		
 	}
 
 }

@@ -19,10 +19,11 @@ public class InputCommands {
 	private byte[] replyPacket; 
 	private short nonDownloadFileNumber = 0;
 	private short downloadStartAck = 1;
+	private File fileDirectory;
 	//Constructors:
-	public InputCommands() {
+	public InputCommands(File directory) {
 		this.headerConstructor = new PacketBuilder(headerSize, packetSize);
-		
+		this.fileDirectory = directory;
 	}
 	
 	
@@ -32,20 +33,19 @@ public class InputCommands {
 	
 	//Commands:
 	
-	//List function commands: TODO change structure to create list and then be able to get parts of the list instead of the whole one.
-	/**
+	//List function commands:
+	/** 
 	 * Reacts to the list function sent by the user, by compiling the list of available files.
 	 * @return
 	 */
 	public void listRequest() { //TODO improve structure and test
 		fileNamesList = new ArrayList<byte[]>();
 		int seqNum = 1;
-        File file = new File(directory);//TODO change directory for pi
     	//Add all file names together in a byte array.
         byte[] nameByte;
         String allFiles = "";
         String concat = ",";
-        String[] fileNames = file.list();
+        String[] fileNames = fileDirectory.list();
         for(String f: fileNames){
             //System.out.println(f);
             allFiles += f;
@@ -210,9 +210,6 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	load.writeFilePart(data);
-    	if (load.calculateFileChecksum() == load.getCRC()) {
-    		
-    	}
     	headerConstructor.setFlags(FlagBytes.FINDOWNACK);
     	headerConstructor.setFileNumber(load.getFileNumber());
     	headerConstructor.setAckNumber(seq + 1);
@@ -220,59 +217,76 @@ public class InputCommands {
         replyPacket = headerConstructor.getPacket();
         return replyPacket;	}
 	
-	public byte[] downloadFinishAcknowledgment() {
-    	headerConstructor.clearData();
-    	headerConstructor.clearHeader();
+	public void downloadFinishAcknowledgment() {
+    	
     	//TODO something happens internally to finish download. !!happens serverside.
-		return null;
-	}
+		}
 	//Upload function commands:
 	
-	public byte[] uploadSynchronization() {
+	public byte[] uploadSynchronization(short fileNumber) {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.SYNUPACK);
+    	headerConstructor.setAckNumber(1);
+    	headerConstructor.setSeqNumber(0);
+    	headerConstructor.setFileNumber(fileNumber);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
-
-		return null;
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;
 	}
 	
-	public byte[] uploadSynchronizationAcknowledgement() {
+	public byte[] uploadSynchronizationAcknowledgement(int ack, DownUploader load) {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
+    	byte[] data = load.readOutFilePart();
+    	headerConstructor.setData(data);
+    	headerConstructor.setSeqNumber(ack);
+    	headerConstructor.setFileNumber(load.getFileNumber());
     	headerConstructor.setFlags(FlagBytes.UP);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
-
-		return null;
-	}
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;
+        }
 	
-	public byte[] uploadAcknowledgement() {
+	public byte[] uploadAcknowledgement(int ack, DownUploader load) {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
-    	//TODO which flag depends on if it is the last packet. !! client does this
-    	headerConstructor.setFlags(FlagBytes.UP);
-    	headerConstructor.setFlags(FlagBytes.FINUP);
+    	headerConstructor.setFileNumber(load.getFileNumber());
+    	headerConstructor.setSeqNumber(ack);
+    	if (load.checkIfLastPart()) {//TODO check if this is the last piece of the file.
+        	headerConstructor.setFlags(FlagBytes.FINUP);
+    	} else {
+        	headerConstructor.setFlags(FlagBytes.UP);
+    	}
+    	byte[] data = load.readOutFilePart();
+    	headerConstructor.setData(data);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
-
-		return null;
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;
 	}
 
-	public byte[] upload() {
+	public byte[] upload(int seq, byte[] data, DownUploader load) {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
+    	load.writeFilePart(data);
+    	headerConstructor.setAckNumber(seq + 1);
+    	headerConstructor.setFileNumber(load.getFileNumber());
     	headerConstructor.setFlags(FlagBytes.UPACK);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
-
-		return null;
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;
 	}
 	
-	public byte[] uploadFinish() {
+	public byte[] uploadFinish(int seq, byte[] data, DownUploader load) {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
+    	load.writeFilePart(data);
+    	headerConstructor.setAckNumber(seq + 1);
+    	headerConstructor.setFileNumber(load.getFileNumber());
     	headerConstructor.setFlags(FlagBytes.FINUPACK);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
-
-		return null;
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;
 	}
 	
 	public byte[] uploadFinishAcknowledgement() {
