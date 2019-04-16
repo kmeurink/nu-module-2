@@ -123,7 +123,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	/**
 	 * Sends download request to server, first showing the available files and querying the user for the filename.
 	 */
-	public void downloadFile(Scanner userIn) { //TODO not very optimized, needs simplification.
+	public void downloadFile(Scanner userIn) { //TODO add check to make sure filename is correct.
 		System.out.println("Please type the name of the file you would like to download: ");
 		getList();
 		String fileName = userIn.nextLine();
@@ -132,7 +132,10 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 		ByteBuffer b = ByteBuffer.allocate(4);
 		b.putInt(fileNameLength);
 		byte[] fileNameLengthBytes = b.array();
-		this.outputPacket.setData(concat(fileNameLengthBytes, fileNameByteVersion));
+		this.outputPacket.setData(InputCommands.concat(fileNameLengthBytes, fileNameByteVersion));
+		this.outputPacket.setAckNumber(0);
+		this.outputPacket.setSeqNumber(0);
+		this.outputPacket.setFileNumber((short) 1); //TODO select available file number.
 		this.outputPacket.setFlags(FlagBytes.SYNDOWN);
 		this.outputPacket.setCheckSum(outputPacket.calculateCheckSum(outputPacket.getCRCFile()));
 		byte[] outputData = this.outputPacket.getPacket();
@@ -146,27 +149,4 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 		
 	}
 
-	
-	private byte[] concat(byte[]...arrays)
-	{
-	    // Determine the length of the result array
-	    int totalLength = 0;
-	    for (int i = 0; i < arrays.length; i++)
-	    {
-	        totalLength += arrays[i].length;
-	    }
-
-	    // create the result array
-	    byte[] result = new byte[totalLength];
-
-	    // copy the source arrays into the result array
-	    int currentIndex = 0;
-	    for (int i = 0; i < arrays.length; i++)
-	    {
-	        System.arraycopy(arrays[i], 0, result, currentIndex, arrays[i].length);
-	        currentIndex += arrays[i].length;
-	    }
-
-	    return result;
-	}
 }

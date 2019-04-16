@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.nedap.university.communication.PacketBuilder;
+import com.nedap.university.files.DownUploader;
 
 public class InputCommands {
 	
@@ -17,6 +18,7 @@ public class InputCommands {
 	private int packetSize = 1024;//TODO make changeable eventually
 	private byte[] replyPacket; 
 	private short nonDownloadFileNumber = 0;
+	private short downloadStartAck = 1;
 	//Constructors:
 	public InputCommands() {
 		this.headerConstructor = new PacketBuilder(headerSize, packetSize);
@@ -120,7 +122,7 @@ public class InputCommands {
 	
 	public void listReceivedAcknowledgement() {
     	//TODO only internal, does not send info back. Probably something with cancelling a timeout to retransmit.
-		System.out.println("Server: List received acknowledgement received. Sending next part.");
+		System.out.println("Server: List received acknowledgement received.");
 	}
 	//Pause function commands:
 	
@@ -150,52 +152,73 @@ public class InputCommands {
 	
 	//Download function commands:
 	
-	public byte[] downloadSynchronization() {
+	public byte[] downloadSynchronization(short fileNumber, byte[] data) {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.SYNDOWNACK);
+    	headerConstructor.setAckNumber(0);
+    	headerConstructor.setSeqNumber(0);
+    	headerConstructor.setFileNumber(fileNumber);
+    	headerConstructor.setData(data);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
-
-		return null;
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;
 	}
 	
-	public byte[] downloadSynchronizationAcknowledgement() {
+	public byte[] downloadSynchronizationAcknowledgement(short file) {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.ACKDOWN);
+    	headerConstructor.setFileNumber(file);
+    	headerConstructor.setAckNumber(downloadStartAck);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
-
-		return null;
-	}
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;	}
 	
-	public byte[] downloadAcknowledgement() {
+	public byte[] downloadAcknowledgement(int ack, DownUploader load) {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
+    	headerConstructor.setSeqNumber(ack);
+    	headerConstructor.setFileNumber(load.getFileNumber());
+    	if (load.checkIfLastPart()) {//TODO check if this is the last piece of the file.
+    		headerConstructor.setFlags(FlagBytes.FINDOWN);
+    	} else {
+    		headerConstructor.setFlags(FlagBytes.DOWN);
+    	}
+    	
+    	byte[] data = load.readOutFilePart();
+    	headerConstructor.setData(data);
     	//TODO which flags depends on whether it is the final piece. !!server sends this.
-    	headerConstructor.setFlags(FlagBytes.DOWN);
-    	headerConstructor.setFlags(FlagBytes.FINDOWN);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;	
+        }
 
-		return null;
-	}
-
-	public byte[] download() {
+	public byte[] download(int seq, byte[] data, DownUploader load) {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
+    	load.writeFilePart(data);
     	headerConstructor.setFlags(FlagBytes.ACKDOWN);
+    	headerConstructor.setAckNumber(seq + 1);
+    	headerConstructor.setFileNumber(load.getFileNumber());
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
-
-		return null;
-	}
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;
+        }
 	
-	public byte[] downloadFinish() {
+	public byte[] downloadFinish(int seq, byte[] data, DownUploader load) {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
+    	load.writeFilePart(data);
+    	if (load.calculateFileChecksum() == load.getCRC()) {
+    		
+    	}
     	headerConstructor.setFlags(FlagBytes.FINDOWNACK);
+    	headerConstructor.setFileNumber(load.getFileNumber());
+    	headerConstructor.setAckNumber(seq + 1);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
-
-		return null;
-	}
+        replyPacket = headerConstructor.getPacket();
+        return replyPacket;	}
 	
 	public byte[] downloadFinishAcknowledgment() {
     	headerConstructor.clearData();
@@ -277,11 +300,41 @@ public class InputCommands {
 	
 	
 	/**
+	 * Method to easily turn byte[] into an integer.
+	 * @param b
+	 * @return
+	 */
+	public static int byteArrayToInt(byte[] b) 
+	{
+	    int integerValue = 0;
+	    for (int i = 0; i < 4; i++) {
+	        int shift = (4 - 1 - i) * 8;
+	        integerValue += (b[i] & 0x000000FF) << shift;
+	    }
+	    return integerValue;
+	}
+	
+	/**
+	 * Method to easily turn byte[] into a long.
+	 * @param b
+	 * @return
+	 */
+	public static int byteArrayToLong(byte[] b) 
+	{
+	    int integerValue = 0;
+	    for (int i = 0; i < 8; i++) {
+	        int shift = (8 - 1 - i) * 8;
+	        integerValue += (b[i] & 0x000000FF) << shift;
+	    }
+	    return integerValue;
+	}
+	
+	/**
 	 * Internal method to easily convert lists with bytes to a byte array.
 	 * @param list
 	 * @return
 	 */
-	private byte[] listToByteArray(List<Byte> list) {
+	public static byte[] listToByteArray(List<Byte> list) {
 		byte[] listArray = new byte[list.size()];
 		for (int i = 0; i < list.size(); i++) {
 			listArray[i] = list.get(i);
@@ -289,5 +342,45 @@ public class InputCommands {
 		return listArray; 
 	}
 	
+	public static byte[] concat(byte[]...arrays)
+	{
+	    // Determine the length of the result array
+	    int totalLength = 0;
+	    for (int i = 0; i < arrays.length; i++)
+	    {
+	        totalLength += arrays[i].length;
+	    }
+
+	    // create the result array
+	    byte[] result = new byte[totalLength];
+
+	    // copy the source arrays into the result array
+	    int currentIndex = 0;
+	    for (int i = 0; i < arrays.length; i++)
+	    {
+	        System.arraycopy(arrays[i], 0, result, currentIndex, arrays[i].length);
+	        currentIndex += arrays[i].length;
+	    }
+
+	    return result;
+	}
+	
+	public static byte[] longToBytes(long l) {
+	    byte[] result = new byte[8];
+	    for (int i = 7; i >= 0; i--) {
+	        result[i] = (byte)(l & 0xFF);
+	        l >>= 8;
+	    }
+	    return result;
+	}
+	
+	public static byte[] intToBytes(int data) {
+	    return new byte[] {
+	        (byte)((data >> 24) & 0xff),
+	        (byte)((data >> 16) & 0xff),
+	        (byte)((data >> 8) & 0xff),
+	        (byte)((data >> 0) & 0xff),
+	    };
+	}
 
 }

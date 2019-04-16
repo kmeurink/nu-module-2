@@ -14,6 +14,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import com.nedap.university.files.DownUploaderHandler;
 import com.nedap.university.utilities.FlagBytes;
 import com.nedap.university.utilities.InputCommands;
 
@@ -49,7 +50,9 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
     private long retransmissionTime = 5000L;
     private byte[] lastPacketReceived; //TODO place the last packet received here.
     private String[] currentAvailableFiles;
-
+    private DownUploaderHandler loadList;
+    private boolean download = true;
+    private boolean upload = false;
     private int tryCount = 0;
     private int packetCount = 0;
     private int packetsSent = 0;
@@ -72,6 +75,7 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
     	this.commands = new InputCommands();
 		this.fileNameHandler = new FileListCompiler();
 		this.packetTimer = new Timer();
+		this.loadList = new DownUploaderHandler();
     }
     
     public void run() {//TODO make it running all the time taking from the receiving queue and then sending.
@@ -102,9 +106,9 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 
 		            //TODO schedule a timer, to ensure the packet is retransmitted if it never receives an ack. But not if it is an ack itself.
 		        	if(sendPacketTimerAllowed()) {
-		        		timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber());
-			        	this.packetTimer.schedule(timeoutTask, retransmissionTime);
-			        	packetTimerset = true;
+		        		//timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber());
+			        	//this.packetTimer.schedule(timeoutTask, retransmissionTime);
+			        	//packetTimerset = true;
 		        	}
 				} else {
 					Thread.sleep(500);
@@ -148,8 +152,8 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
     	        if(PacketFlagSelection()) {
     	        	//TODO if a timer has been set, cancel timer and allow for a new packet to be sent.
 		        	if(packetTimerset) {
-		        		timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber());
-	    	        	this.timeOutList.get(this.sentPacketAnalyzer.getFileNumber()).get(this.sentPacketAnalyzer.getSeqNumber()).cancel();
+		        	//	timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber());
+	    	        	//this.timeOutList.get(this.sentPacketAnalyzer.getFileNumber()).get(this.sentPacketAnalyzer.getSeqNumber()).cancel();
 		        	}
     	        	this.sentPacketList.remove(this.lastPacketSent);
     	        } //TODO otherwise nothing should happen, and the timer should run out.
@@ -257,32 +261,59 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 			commands.pauseAcknowledgement();
 			break;
 		//Download function options:
-		case (byte) 17: //SYN/DOWNLOAD
+		case (byte) 17: //SYN/DOWNLOAD server side
 			System.out.println("Command tree: SYN/DOWNLOAD");
-
-			commands.downloadSynchronization();
+			if (this.receivedPacketAnalyzer.getAckNumber() == 0 && this.sentPacketAnalyzer.getSeqNumber() == 0 && this.loadList.checkFilePresence(download, this.receivedPacketAnalyzer.getFileNumber())) {
+				byte[] nameLength = Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), 0, 4);
+				int fileNameLength = commands.byteArrayToInt(nameLength);
+				String fileName = Arrays.toString(Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), 4, fileNameLength + 4));
+				this.loadList.createDownload(fileName, this.receivedPacketAnalyzer.getFileNumber(), false);
+				data = commands.downloadSynchronization(this.receivedPacketAnalyzer.getFileNumber(), this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()).downloadInitialization());
+				addToSendingQueue(data);
+			}
 			break;
-		case (byte) 19: //SYN/DOWNLOAD/ACK
+		case (byte) 19: //SYN/DOWNLOAD/ACK client side
 			System.out.println("Command tree: SYN/DOWNLOAD/ACK");
-
-			commands.downloadSynchronizationAcknowledgement();
+			if (this.receivedPacketAnalyzer.getAckNumber() == 0 && this.sentPacketAnalyzer.getSeqNumber() == 0) {
+				byte[] nameLength = Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), 0, 4);
+				int fileNameLength = commands.byteArrayToInt(nameLength);
+				String fileName = Arrays.toString(Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), 4, fileNameLength + 4));
+				byte[] fileSize = Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), fileNameLength + 4, fileNameLength + 4 + 4);
+				byte[] crc = Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), fileNameLength + 4 + 4, fileNameLength + 4 + 4 + 8);
+				this.loadList.createDownload(fileName, this.receivedPacketAnalyzer.getFileNumber(), true);
+				this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()).setSize(InputCommands.byteArrayToInt(fileSize));
+				this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()).setFileCRC(InputCommands.byteArrayToLong(crc));
+				data = commands.downloadSynchronizationAcknowledgement(this.receivedPacketAnalyzer.getFileNumber());
+				addToSendingQueue(data);
+			}
 			break;
-		case (byte) 18: //ACK/DOWNLOAD
+		case (byte) 18: //ACK/DOWNLOAD server side
 			System.out.println("Command tree: ACK/DOWNLOAD");
-
-			commands.downloadAcknowledgement();
+			if (this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber() && (this.sentPacketAnalyzer.getSeqNumber() - 1) == this.receivedPacketAnalyzer.getAckNumber()) {
+				data = commands.downloadAcknowledgement(this.receivedPacketAnalyzer.getAckNumber(), this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()));
+				addToSendingQueue(data);
+			}
 			break;
-		case (byte) 16: //DOWNLOAD
+		case (byte) 16: //DOWNLOAD client side
 			System.out.println("Command tree: DOWNLOAD");
-
-			commands.download();
+			if (this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber() && this.receivedPacketAnalyzer.getSeqNumber() == this.sentPacketAnalyzer.getAckNumber()) {
+				data = commands.download(this.receivedPacketAnalyzer.getSeqNumber(), this.receivedPacketAnalyzer.getData(), this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()));
+				addToSendingQueue(data);
+			}
 			break;
-		case (byte) 20: //FIN/DOWNLOAD
+		case (byte) 20: //FIN/DOWNLOAD client side
 			System.out.println("Command tree: FIN/DOWNLOAD");
-
-			commands.downloadFinish();
+			if (this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber() && this.receivedPacketAnalyzer.getSeqNumber() == this.sentPacketAnalyzer.getAckNumber()) {
+				data = commands.downloadFinish(this.receivedPacketAnalyzer.getSeqNumber(), this.receivedPacketAnalyzer.getData(), this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()));
+		    	if (this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()).calculateFileChecksum() == this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()).getCRC()) {
+		    		this.loadList.removeDownUpload(this.receivedPacketAnalyzer.getFileNumber());
+		    	} else {
+		    		System.out.println("Sorry the file was corrupted.");
+		    	}
+				addToSendingQueue(data);
+			}
 			break;
-		case (byte) 22: //FIN/DOWNLOAD/ACK
+		case (byte) 22: //FIN/DOWNLOAD/ACK server side
 			System.out.println("Command tree: FIN/DOWNLOAD/ACK");
 
 		commands.downloadFinishAcknowledgment();
@@ -347,12 +378,12 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
        private List<byte[]> nameListByte = new ArrayList<byte[]>();
        
        public void addToList(byte[] fileNames) {
-    	   System.out.println("Adding files to list. " +  Thread.currentThread()); //TODO for testing.
+    	   //System.out.println("Adding files to list. " +  Thread.currentThread()); //TODO for testing.
     	   this.nameListByte.add(fileNames);
        }
        
        public void compileList() {
-    	   System.out.println("Compiling list. " +  Thread.currentThread()); //TODO for testing.
+    	    //System.out.println("Compiling list. " +  Thread.currentThread()); //TODO for testing.
            	String concat =",";
 	        //This is assuming all bytes have been received, so all bytes must be collected first before translating back to string. listFinalAcknowledgement method
 	        int byteLengthNames = 0;
@@ -381,7 +412,6 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
        }
 	}
 	
-    
     //Queueing and list methods:
     
     /**
@@ -430,9 +460,9 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 				timeOutList.get(fileNum).remove(seqNum);
 				TimerTask reTask = new PacketTimeout(packet, fileNum, seqNum);
 				socket.send(buildDatagram(receiverAddress, receiverPort, packet));
-	    		Map<Integer, TimerTask> tempMap= new HashMap<>();
-	    		tempMap.put(seqNum, reTask);
-	    		timeOutList.put(fileNum, tempMap);
+	    		//Map<Integer, TimerTask> tempMap= new HashMap<>();
+	    		//tempMap.put(seqNum, reTask);
+	    		//timeOutList.put(fileNum, tempMap);
 	        	packetTimer.schedule(reTask, retransmissionTime);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -441,4 +471,26 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 			
 		}
     }
+    /*
+    TimerTask setTask() {
+    	return new TimerTask() {
+    		@Override
+    		void run() {
+    			if (queue.containts()) {
+    				// haal timer uit lijst
+    				// zet nieuwe timer
+    				// nieuwe timer lijst in
+    			} else {
+    				retransmission
+    			
+    			}
+    		}
+    	}
+    }
+    
+    Timer timer = new Timer();
+    TimerTask timertask = this.setTask();
+    
+    timer.schedule(timertask,delay);
+    */
 }

@@ -86,7 +86,7 @@ public class FileServer_ClientSide {
 				//socket.send(broadcastReply);
 				//System.out.println("client reply sent.");
 				broadcasting = false;
-				inputHandler.bindAddress(serverAddress);
+				//inputHandler.bindAddress(serverAddress);
 				reliableSender.setAddress(serverAddress);
 				this.reliableSender.setPort(serverPort);
 				socket.setSoTimeout(0);
@@ -194,7 +194,7 @@ public class FileServer_ClientSide {
 			this.inputHandler.getList();//TODO list function does not have acks to confirm full delivery
 		} else if (input.equals("3")) {
 			System.out.println("Sorry this command has not yet been implemented.");
-			//this.inputHandler.downloadFile(userIn);
+			this.inputHandler.downloadFile(userIn);
 		} else if (input.equals("4")) {
 			//TODO implement selector, to find the file that needs to be uploaded.
 			System.out.println("Sorry this command has not yet been implemented.");
