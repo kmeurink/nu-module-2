@@ -14,19 +14,19 @@ public class DownUploaderHandlerTest {
 	private DownUploaderHandler fileHandlerTest;
 	DownUploader downUpload1;
 	DownUploader downUpload2;
-	
+/*	
 	@Before
 	public void setUp() throws Exception {
 		fileHandlerTest = new DownUploaderHandler();
 		downUpload1 = new DownUploader();
 		downUpload2 = new DownUploader();
 	}
-
+*/
 	@Test
 	public void testFileHandlerInit() {
 		assertTrue(fileHandlerTest.getDownUploads().isEmpty());
 	}
-
+/*
 	@Test
 	public void testAddDownUpload() {
 		fileHandlerTest.addDownUpload(downUpload1);
@@ -44,5 +44,5 @@ public class DownUploaderHandlerTest {
 		fileHandlerTest.removeDownUpload(downUpload1);
 		assertEquals(1, fileHandlerTest.getDownUploads().size());
 		assertTrue(fileHandlerTest.getDownUploads().contains(downUpload2));
-	}
+	}*/
 }

@@ -28,13 +28,13 @@ public class DownUploaderTest {
 	public void testDownUploaderInit() {
 		assertTrue(downUpTest.sendData().isEmpty());
 	}
-
+	/*
 	@Test
 	public void testSetGetName() {
 		downUpTest.setName("test.txt");
 		assertEquals("test.txt", downUpTest.getName());
 		
-	}
+	} */
 
 	@Test
 	public void testSetGetSize() {
@@ -51,7 +51,7 @@ public class DownUploaderTest {
 		downUpTest.addData(dataPart2);
 		assertEquals(998,downUpTest.determineSize());
 	}
-	
+	/*
 	@Test
 	public void testReadOutFile() {
 		downUpTest.readOutFile("src/main/java/com/nedap/university/test/testFile.txt");
@@ -91,6 +91,7 @@ public class DownUploaderTest {
 		assertEquals(dateBlock[0],downUpTest.sendDataSingle(2)[0]);
 		assertEquals(dateBlock[1],downUpTest.sendDataSingle(2)[1]);
 	}
+	*/
 /*
 	@Test
 	public void testSetSeqNumber() {

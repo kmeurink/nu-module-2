@@ -1,6 +1,7 @@
 package com.nedap.university.server;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -14,6 +15,7 @@ import java.util.List;
 
 import com.nedap.university.communication.InputHandler;
 import com.nedap.university.communication.PacketReceiver;
+import com.nedap.university.communication.TransferProtocol;
 
 public class FileServer_ServerSide {
 
@@ -31,13 +33,17 @@ public class FileServer_ServerSide {
 	private InputHandler inputHandler;
 	private byte[] broadcastAckPacket= new byte[15];
 	private DatagramPacket broadcastACK = new DatagramPacket(broadcastAckPacket, broadcastAckPacket.length, BROADCASTaddress, serverPort);// 
-	
+    private TransferProtocol reliableSender;
+    private String directory = "testFiles/";
+    private File fileDirectory = new File(directory);
 	//Constructors:	
     public FileServer_ServerSide(int port) throws SocketException, UnknownHostException {
         socket = new DatagramSocket(port);
 		packetReceiver = new PacketReceiver(socket);
+    	this.reliableSender = new TransferProtocol(socket, fileDirectory);
+    	this.reliableSender.start();
 		this.clientAddress = InetAddress.getByName("localhost");//TODO for testing
-		inputHandler = new InputHandler(socket, clientAddress, clientPort);
+		inputHandler = new InputHandler(reliableSender, fileDirectory);
     }
  
     public static void main(String[] args) {
@@ -66,20 +72,6 @@ public class FileServer_ServerSide {
 	
 	//Commands:
     
-    //Load the quotes from a file into a string array.
-    //TODO replace by loading a folder.
-    private void loadQuotesFromFile(String quoteFile) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(quoteFile));
-        String aQuote;
- 
-        while ((aQuote = reader.readLine()) != null) {
-            listQuotes.add(aQuote);
-        }
- 
-        reader.close();
-    }
-    //TODO correctly implement
-    //Example for handling serverinput:
     /**
 	 * Command to continuously read out the server input.
 	 * Allowing for simultaneous processing of input, output and internal commands.
@@ -97,18 +89,20 @@ public class FileServer_ServerSide {
 	 * Loop for listening to buffered reader in, reading out the server input
 	 * And performing the required actions based on the input.
 	 */
-	public void serverConnection() { //TODO bug present where packets are sent double after a client disconnects and reconnects.
+	public void serverConnection() { //TODO figure out how to handle reliable data transfer.
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
 				System.out.println("Packet received from client");
 	    		if(Arrays.equals(handledPacket, this.BROADCAST.getBytes())) {
-	    			System.out.println("Sending broadcast acknowledgement"); //TODO not reached, something does not match
+	    			System.out.println("Sending broadcast acknowledgement");
 	        		byte[] broadcastPacket= new byte[0];
 	        		DatagramPacket broadcast = new DatagramPacket(broadcastPacket, 0, this.packetReceiver.getReceiverAddress(), this.packetReceiver.getReceiverPort());
 	        		socket.send(broadcast);
-	    		} else {		
-	    			inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), clientPort);//TODO checking bug this.packetReceiver.getReceiverPort()
+	    		} else {
+					this.reliableSender.setAddress(this.packetReceiver.getReceiverAddress());
+					this.reliableSender.setPort(clientPort);
+					this.reliableSender.addToReceivingQueue(handledPacket);
 	    		}
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();

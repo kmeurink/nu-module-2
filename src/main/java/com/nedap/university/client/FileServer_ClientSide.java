@@ -1,5 +1,6 @@
 package com.nedap.university.client;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -11,6 +12,7 @@ import java.util.Scanner;
 
 import com.nedap.university.communication.InputHandler;
 import com.nedap.university.communication.PacketReceiver;
+import com.nedap.university.communication.TransferProtocol;
 
 //TODO determine what distinguishes server and client, otherwise they should be combined.
 public class FileServer_ClientSide {
@@ -23,20 +25,25 @@ public class FileServer_ClientSide {
 	private DatagramPacket broadcast = new DatagramPacket(broadcastPacket, broadcastPacket.length, BROADCASTaddress, serverPort);
 	private DatagramPacket broadcastACK = new DatagramPacket(broadcastPacket, broadcastPacket.length, BROADCASTaddress, serverPort); 
     private DatagramSocket socket = new DatagramSocket(clientPort);
-    
+    private TransferProtocol reliableSender;
 	private InetAddress serverAddress;
 	private boolean finished = false;
 	private boolean userFinished = false;
     private PacketReceiver packetReceiver;
 	private InputHandler inputHandler;
     private boolean broadcasting = true;
+    private Scanner userIn;
+    private String directory = "testFiles/written/";
+    private File fileDirectory = new File(directory);
     
 	//Constructors:
     public FileServer_ClientSide() throws SocketException, UnknownHostException {
+    	this.reliableSender = new TransferProtocol(socket, fileDirectory);
+    	this.reliableSender.start();
 		socket.setSoTimeout(2000);
 		packetReceiver = new PacketReceiver(socket);
 		this.serverAddress = InetAddress.getByName("localhost");//TODO for testing
-		inputHandler = new InputHandler(socket, serverAddress, serverPort); //TODO create method to set them, instead of on boot?
+		inputHandler = new InputHandler(reliableSender, fileDirectory); //TODO create method to set them, instead of on boot?
     }
     
     public static void main(String[] args) {
@@ -82,7 +89,9 @@ public class FileServer_ClientSide {
 				//socket.send(broadcastReply);
 				//System.out.println("client reply sent.");
 				broadcasting = false;
-				inputHandler.bindAddress(serverAddress);
+				//inputHandler.bindAddress(serverAddress);
+				reliableSender.setAddress(serverAddress);
+				this.reliableSender.setPort(serverPort);
 				socket.setSoTimeout(0);
 			} catch (SocketTimeoutException e) {
 				System.out.println("Failed to connect, retrying.");
@@ -93,7 +102,7 @@ public class FileServer_ClientSide {
     }
 
     //TODO correctly implement
-    //Example for handling serverinput:
+    //Example for handling server input:
     /**
 	 * Command to continuously read out the server input.
 	 * Allowing for simultaneous processing of input, output and internal commands.
@@ -111,12 +120,15 @@ public class FileServer_ClientSide {
 	 * Loop for listening to buffered reader in, reading out the server input
 	 * And performing the required actions based on the input.
 	 */
-	public void serverConnection() {
+	public void serverConnection() { //TODO figure out how to handle reliable data transfer. 
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
-				System.out.println("Packet received from server, flag: " + handledPacket[10]); //TODO for testing
-				inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), serverPort);//TODO checking bug this.packetReceiver.getReceiverPort()
+				//System.out.println("Packet received from server, flag: " + handledPacket[10]); //TODO for testing
+				this.reliableSender.setAddress(this.packetReceiver.getReceiverAddress());
+				this.reliableSender.setPort(serverPort);
+				this.reliableSender.addToReceivingQueue(handledPacket);
+				//inputHandler.PacketInputSort(handledPacket, this.packetReceiver.getReceiverAddress(), serverPort); //TODO add to receive queue of transfer protocol
 			} catch (IOException e) {//TODO handle error
 				e.printStackTrace();
 			}
@@ -143,7 +155,7 @@ public class FileServer_ClientSide {
 	 * @throws InterruptedException 
 	 */
 	public void listenLoop(Scanner scan) {
-		Scanner userIn = scan;
+		userIn = scan;
 		while (!userFinished) { 
 			printTUI();
 			handleInput(userIn.nextLine());
@@ -165,11 +177,12 @@ public class FileServer_ClientSide {
 		System.out.println();
 		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
 		System.out.println("\\\\   Welcome to this fileServer, please type a number corresponding to one of the options below                 \\\\");
-		System.out.println("\\\\ 1 : Refresh.                                                                                                 \\\\");
+		System.out.println("\\\\ 1 : Select local file repository.                                                                            \\\\");
 		System.out.println("\\\\ 2 : List the available files on the server.                                                                  \\\\");
 		System.out.println("\\\\ 3 : Download a file from the server.                                                                         \\\\");
 		System.out.println("\\\\ 4 : Upload a file to the server.                                                                             \\\\");
 		System.out.println("\\\\ 5 : Show the statistics of the server connection.                                                            \\\\");
+		System.out.println("\\\\ 6 : Pause upload or download                                                                                 \\\\");
 		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
 		System.out.println();
 		System.out.println();
@@ -179,16 +192,22 @@ public class FileServer_ClientSide {
 	 * Handling of user input.
 	 * @param input
 	 */
-	private void handleInput(String input) { //TODO actually handle the input, possibly better to do in another class?
-		if (input.equals("1")) { //TODO make connection before starting everything. So automatic.
+	private void handleInput(String input) { 
+		if (input.equals("1")) {
+			System.out.println("Sorry this command has not yet been implemented.");
 		} else if (input.equals("2")) {
-			this.inputHandler.getList();//TODO list function does not have acks to confirm full delivery
+			this.inputHandler.getList();
 		} else if (input.equals("3")) {
-			System.out.println("Sorry this command has not yet been implemented.");
+			this.inputHandler.downloadFile(userIn);
 		} else if (input.equals("4")) {
-			System.out.println("Sorry this command has not yet been implemented.");
+			//TODO implement selector, to find the file that needs to be uploaded.
+			this.inputHandler.uploadFile(userIn);
 		} else if (input.equals("5")) {
 			System.out.println("Sorry this command has not yet been implemented.");
+			//this.inputHandler.statistics();
+		} else if (input.equals("6")) {
+			System.out.println("Sorry this command has not yet been implemented.");
+			//this.inputHandler.pause(userIn);
 		}
 	}
 	
