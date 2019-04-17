@@ -19,6 +19,7 @@ ssh.settings {
 }
 
 mainClassName = 'com.nedap.university.server.FileServer_ServerSide'
+//mainClassName = 'com.nedap.university.client.FileServer_ClientSide'
 version = '0.0.1'
 
 jar {

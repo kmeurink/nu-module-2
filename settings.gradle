@@ -16,4 +16,5 @@ include 'api'
 include 'services:webservice'
 */
 
-rootProject.name = 'ClientServer-PI'
+rootProject.name = 'FileServer-server-PI'
+//rootProject.name = 'FileServer-client-PI'
