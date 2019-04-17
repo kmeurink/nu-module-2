@@ -55,8 +55,7 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
     private DownUploaderHandler loadList;
     private boolean download = true;
     private boolean upload = false;
-    private int tryCount = 0;
-    private int packetCount = 0;
+    private int packetLost = 0;
     private int packetsSent = 0;
     private int maxPackets = 1;
     
@@ -108,8 +107,8 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 
 		            //TODO schedule a timer, to ensure the packet is retransmitted if it never receives an ack. But not if it is an ack itself.
 		        	if(sendPacketTimerAllowed()) {
-		        		//timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber());
-			        	//this.packetTimer.schedule(timeoutTask, retransmissionTime);
+		        		timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber());
+			        	this.packetTimer.schedule(timeoutTask, retransmissionTime);
 			        	//packetTimerset = true;
 		        	}
 				} else {
@@ -153,9 +152,15 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
     	        // The expected packet must be processed and the packet resulting from it must be added to the send queue.
     	        if(PacketFlagSelection()) {
     	        	//TODO if a timer has been set, cancel timer and allow for a new packet to be sent.
-		        	if(packetTimerset) {
+		        	if(timeOutList.containsKey(this.receivedPacketAnalyzer.getFileNumber()) && timeOutList.get(this.receivedPacketAnalyzer.getFileNumber()).containsKey(this.receivedPacketAnalyzer.getAckNumber() - 1)) {
 		        	//	timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber());
-	    	        	//this.timeOutList.get(this.sentPacketAnalyzer.getFileNumber()).get(this.sentPacketAnalyzer.getSeqNumber()).cancel();
+		        		Map <Integer, TimerTask> fileMap = this.timeOutList.get(this.receivedPacketAnalyzer.getFileNumber());
+		        		TimerTask task = fileMap.get(this.receivedPacketAnalyzer.getAckNumber() - 1);
+		        		task.cancel();
+	    	        	fileMap.remove(this.receivedPacketAnalyzer.getAckNumber() - 1);
+	    	        	if (fileMap.isEmpty()) {
+	    	        		this.timeOutList.remove(this.receivedPacketAnalyzer.getFileNumber());
+	    	        	}
 		        	}
     	        	this.sentPacketList.remove(this.lastPacketSent);
     	        } //TODO otherwise nothing should happen, and the timer should run out.
@@ -185,7 +190,7 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
     	boolean setTimer = false;
     	if (sentPacketAnalyzer.getFlags() != FlagBytes.LISTACK && sentPacketAnalyzer.getFlags() != FlagBytes.PAUACK && sentPacketAnalyzer.getFlags() != FlagBytes.ACKDOWN 
     			&& sentPacketAnalyzer.getFlags() != FlagBytes.UPACK && sentPacketAnalyzer.getFlags() != FlagBytes.FINDOWNACK && sentPacketAnalyzer.getFlags() != FlagBytes.FINUPACK 
-    			&& sentPacketAnalyzer.getFlags() != FlagBytes.STOPACK) {
+    			&& sentPacketAnalyzer.getFlags() != FlagBytes.STOPACK) {//TODO maybe add upsynack?
     		setTimer = true;
     	}
     	return setTimer;
@@ -197,7 +202,7 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 	 * @param packet
 	 */
 	public boolean PacketFlagSelection() { //TODO determine if the current setup is correct.
-		System.out.println("Starting flag selection.");
+		//System.out.println("Starting flag selection.");
 		boolean correctPacket = false;
 		byte[] data;
 		//System.out.println(Arrays.toString(inputPacket.calculateCheckSum(inputPacket.getCRCFile())));
@@ -209,7 +214,7 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 		switch(command) { //TODO add actions
 		//List function options:
 		case (byte) 33: //SYN/LIST server side.
-			System.out.println("Command tree: SYN/LIST");
+			//System.out.println("Command tree: SYN/LIST");
 			if (this.receivedPacketAnalyzer.getAckNumber() == 0 && this.receivedPacketAnalyzer.getSeqNumber() == 0 && this.receivedPacketAnalyzer.getFileNumber() == 0) {
 				correctPacket = true;
 				commands.listRequest();
@@ -221,28 +226,28 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 			//System.out.println("Filename list size" + dataList.size());
 			break;
 		case (byte) 35: //SYN/LIST/ACK client side.
-			System.out.println("Command tree: SYN/LIST/ACK");
-			if (this.receivedPacketAnalyzer.getAckNumber() == 0 && this.receivedPacketAnalyzer.getSeqNumber() == (this.sentPacketAnalyzer.getAckNumber() + 1) && this.receivedPacketAnalyzer.getFileNumber() == 0) {
+			//System.out.println("Command tree: SYN/LIST/ACK");
+			if (this.receivedPacketAnalyzer.getAckNumber() == (this.sentPacketAnalyzer.getSeqNumber() + 1) && this.receivedPacketAnalyzer.getSeqNumber() == 0 && this.receivedPacketAnalyzer.getFileNumber() == 0) {
 				correctPacket = true;
 				this.fileNameHandler.addToList(this.receivedPacketAnalyzer.getData());
-				data = commands.listAcknowledgement(this.receivedPacketAnalyzer.getSeqNumber());
+				data = commands.listAcknowledgement(this.receivedPacketAnalyzer.getAckNumber());
 				addToSendingQueue(data);
 			}
 			break;
 		case (byte) 39: //SYN/LIST/ACK/FIN client side.
-			System.out.println("Command tree: SYN/LIST/ACK/FIN");
-			if (this.receivedPacketAnalyzer.getAckNumber() == 0 && this.receivedPacketAnalyzer.getSeqNumber() == (this.sentPacketAnalyzer.getAckNumber() + 1) && this.receivedPacketAnalyzer.getFileNumber() == 0) {
+			//System.out.println("Command tree: SYN/LIST/ACK/FIN");
+			if (this.receivedPacketAnalyzer.getAckNumber() == (this.sentPacketAnalyzer.getSeqNumber() + 1) && this.receivedPacketAnalyzer.getSeqNumber() == 0 && this.receivedPacketAnalyzer.getFileNumber() == 0) {
 				correctPacket = true;
 				this.fileNameHandler.addToList(this.receivedPacketAnalyzer.getData());
 				this.fileNameHandler.compileList();
-				data = commands.listFinalAcknowledgement(this.receivedPacketAnalyzer.getSeqNumber());
+				data = commands.listFinalAcknowledgement(this.receivedPacketAnalyzer.getAckNumber());
 				addToSendingQueue(data);
 			}	
 
 			break;
 		case (byte) 34: //LIST/ACK server side.
-			System.out.println("Command tree: LIST/ACK");
-			if (this.receivedPacketAnalyzer.getAckNumber() == this.sentPacketAnalyzer.getSeqNumber() && this.receivedPacketAnalyzer.getFileNumber() == 0) {
+			//System.out.println("Command tree: LIST/ACK");
+			if (this.receivedPacketAnalyzer.getSeqNumber() == this.sentPacketAnalyzer.getAckNumber() && this.receivedPacketAnalyzer.getFileNumber() == 0) {
 				correctPacket = true;
 				commands.listReceivedAcknowledgement();
 			}
@@ -250,10 +255,13 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 		//Pause function options:
 		case (byte) 65: //PAUSE/SYN
 			System.out.println("Command tree: PAUSE/SYN");
+			correctPacket = true;
+
 			commands.pauseSynchronization();
 			break;
 		case (byte) 67: //PAUSE/SYN/ACK
 			System.out.println("Command tree: PAUSE/SYN/ACK");
+			correctPacket = true;
 
 			commands.pauseSynchronizationAcknowledgement();
 			break;
@@ -264,8 +272,9 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 			break;
 		//Download function options:
 		case (byte) 17: //SYN/DOWNLOAD server side
-			System.out.println("Command tree: SYN/DOWNLOAD");
+			//System.out.println("Command tree: SYN/DOWNLOAD");
 			if (this.receivedPacketAnalyzer.getAckNumber() == 0 && this.receivedPacketAnalyzer.getSeqNumber() == 0 && this.loadList.checkFilePresence(download, this.receivedPacketAnalyzer.getFileNumber())) {
+				correctPacket = true;
 				byte[] nameLength = Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), 0, 4);
 				int fileNameLength = commands.byteArrayToInt(nameLength);
 				String fileName = new String(Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), 4, fileNameLength + 4));
@@ -275,8 +284,9 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 			}
 			break;
 		case (byte) 19: //SYN/DOWNLOAD/ACK client side
-			System.out.println("Command tree: SYN/DOWNLOAD/ACK");
-			if (this.receivedPacketAnalyzer.getAckNumber() == 0 && this.sentPacketAnalyzer.getSeqNumber() == 0) {
+			//System.out.println("Command tree: SYN/DOWNLOAD/ACK");
+			if (this.receivedPacketAnalyzer.getAckNumber() == 1) {
+				correctPacket = true;
 				byte[] nameLength = Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), 0, 4);
 				int fileNameLength = commands.byteArrayToInt(nameLength);
 				String fileName = new String(Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), 4, fileNameLength + 4));
@@ -290,37 +300,42 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 			}
 			break;
 		case (byte) 18: //ACK/DOWNLOAD server side
-			System.out.println("Command tree: ACK/DOWNLOAD");
+			//System.out.println("Command tree: ACK/DOWNLOAD");
 			//System.out.println("sent packet file number: " + this.sentPacketAnalyzer.getFileNumber() + " received packet file number: " + this.receivedPacketAnalyzer.getFileNumber());
 			//System.out.println("sent packet seq number: " + this.sentPacketAnalyzer.getSeqNumber() + " received packet ack number: " + this.receivedPacketAnalyzer.getAckNumber());
 			if (this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber() && (this.sentPacketAnalyzer.getSeqNumber() + 1) == this.receivedPacketAnalyzer.getAckNumber()) {
+				correctPacket = true;
 				data = commands.downloadAcknowledgement(this.receivedPacketAnalyzer.getAckNumber(), this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()));
 				addToSendingQueue(data);
 			}
 			break;
 		case (byte) 16: //DOWNLOAD client side
-			System.out.println("Command tree: DOWNLOAD");
+			//System.out.println("Command tree: DOWNLOAD");
 			if (this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber() && this.receivedPacketAnalyzer.getSeqNumber() == this.sentPacketAnalyzer.getAckNumber()) {
+				correctPacket = true;
 				data = commands.download(this.receivedPacketAnalyzer.getSeqNumber(), this.receivedPacketAnalyzer.getData(), this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()));
 				addToSendingQueue(data);
 			}
 			break;
 		case (byte) 20: //FIN/DOWNLOAD client side
-			System.out.println("Command tree: FIN/DOWNLOAD");
+			//System.out.println("Command tree: FIN/DOWNLOAD");
 			if (this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber() && this.receivedPacketAnalyzer.getSeqNumber() == this.sentPacketAnalyzer.getAckNumber()) {
+				correctPacket = true;
 				data = commands.downloadFinish(this.receivedPacketAnalyzer.getSeqNumber(), this.receivedPacketAnalyzer.getData(), this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()));
 				long checkSum = this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()).calculateFileChecksum();
 		    	if (checkSum == this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()).getCRC()) {
-		    		this.loadList.removeDownUpload(this.receivedPacketAnalyzer.getFileNumber());
-		    	} else {
+		    	} 
+		    	else {
 		    		System.out.println("Sorry the file was corrupted.");
 		    	}
+	    		this.loadList.removeDownUpload(this.receivedPacketAnalyzer.getFileNumber());
 				addToSendingQueue(data);
 			}
 			break;
 		case (byte) 22: //FIN/DOWNLOAD/ACK server side
-			System.out.println("Command tree: FIN/DOWNLOAD/ACK");
+			//System.out.println("Command tree: FIN/DOWNLOAD/ACK");
 			if (this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber()) {
+				correctPacket = true;
 	    		this.loadList.removeDownUpload(this.receivedPacketAnalyzer.getFileNumber());
 			}
 			//commands.downloadFinishAcknowledgment();
@@ -328,56 +343,65 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 
 		//Upload function options:
 		case (byte) 9: //SYN/UPLOAD server side
-			System.out.println("Command tree: SYN/UPLOAD");
+			//System.out.println("Command tree: SYN/UPLOAD");
 			if (this.receivedPacketAnalyzer.getAckNumber() == 0 && this.receivedPacketAnalyzer.getSeqNumber() == 0 && this.loadList.checkFilePresence(upload, this.receivedPacketAnalyzer.getFileNumber())) {
+				correctPacket = true;
 				byte[] nameLength = Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), 0, 4);
 				int fileNameLength = commands.byteArrayToInt(nameLength);
 				String fileName = new String(Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), 4, fileNameLength + 4));
 				int size = InputCommands.byteArrayToInt(Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), fileNameLength + 4, fileNameLength + 4 + 4));
 				long crc = InputCommands.byteArrayToLong(Arrays.copyOfRange(this.receivedPacketAnalyzer.getData(), fileNameLength + 8, fileNameLength + 16));
 				this.loadList.createDownload(fileName, this.receivedPacketAnalyzer.getFileNumber(), true, false);
+				this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()).setFileCRC(crc);
+				this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()).setSize(size);
 				data = commands.uploadSynchronization(this.receivedPacketAnalyzer.getFileNumber());
 				addToSendingQueue(data);
 			}
 			break;
 		case (byte) 11: //SYN/UPLOAD/ACK client side //TODO bug does not get a DownUploader
-			System.out.println("Command tree: SYN/UPLOAD/ACK");
+			//System.out.println("Command tree: SYN/UPLOAD/ACK");
 			if (this.receivedPacketAnalyzer.getAckNumber() == 1 && this.receivedPacketAnalyzer.getSeqNumber() == 0 && this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber()) {
+				correctPacket = true;
 				data = commands.uploadSynchronizationAcknowledgement(this.receivedPacketAnalyzer.getAckNumber(), this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()));
 				addToSendingQueue(data);
 			}			
 			break;
 		case (byte) 8: //UPLOAD server side
-			System.out.println("Command tree: UPLOAD");
+			//System.out.println("Command tree: UPLOAD");
 			if (this.receivedPacketAnalyzer.getSeqNumber() == this.sentPacketAnalyzer.getAckNumber() && this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber()) {
+				correctPacket = true;
 				data = commands.upload(this.receivedPacketAnalyzer.getSeqNumber(), this.receivedPacketAnalyzer.getData(), this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()));
 				addToSendingQueue(data);
 			}
 			break;
 		case (byte) 10: //UPLOAD/ACK client side
-			System.out.println("Command tree: UPLOAD/ACK");
+			//System.out.println("Command tree: UPLOAD/ACK");
 			if ((this.receivedPacketAnalyzer.getAckNumber() - 1) == this.sentPacketAnalyzer.getSeqNumber() && this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber()) {
+				correctPacket = true;
 				data = commands.uploadAcknowledgement(this.receivedPacketAnalyzer.getAckNumber(), this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()));
 				addToSendingQueue(data);
 			}
 
 			break;
 		case (byte) 12: //FIN/UPLOAD server side
-			System.out.println("Command tree: FIN/UPLOAD");
+			//System.out.println("Command tree: FIN/UPLOAD");
 			if (this.receivedPacketAnalyzer.getSeqNumber() == this.sentPacketAnalyzer.getAckNumber() && this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber()) {
+				correctPacket = true;
 				data = commands.uploadFinish(this.receivedPacketAnalyzer.getSeqNumber(), this.receivedPacketAnalyzer.getData(), this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()));
 				long checkSum = this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()).calculateFileChecksum();
 		    	if (checkSum == this.loadList.getDownUploads().get(this.receivedPacketAnalyzer.getFileNumber()).getCRC()) {
-		    		this.loadList.removeDownUpload(this.receivedPacketAnalyzer.getFileNumber());
-		    	} else {
+		    	} 
+		    	else {
 		    		System.out.println("Sorry the file was corrupted.");
 		    	}
+	    		this.loadList.removeDownUpload(this.receivedPacketAnalyzer.getFileNumber());
 				addToSendingQueue(data);
 			}
 			break;
 		case (byte) 14: //FIN/UPLOAD/ACK client side
-			System.out.println("Command tree: FIN/UPLOAD/ACK");
+			//System.out.println("Command tree: FIN/UPLOAD/ACK");
 			if (this.sentPacketAnalyzer.getFileNumber() == this.receivedPacketAnalyzer.getFileNumber()) {
+				correctPacket = true;
 				this.loadList.removeDownUpload(this.receivedPacketAnalyzer.getFileNumber());
 			}
 			//commands.uploadFinishAcknowledgement();
@@ -385,11 +409,13 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 		//Stop function options:
 		case (byte) -127: //STARTSTOP/SYN
 			System.out.println("Command tree: STARTSTOP/SYN");
+			correctPacket = true;
 
 			commands.stopSynchronization();
 			break;
 		case (byte) -126: //STARTSTOP/ACK
 			System.out.println("Command tree: STARTSTOP/ACK");
+			correctPacket = true;
 
 			commands.stopAcknowledgement();
 			break;
@@ -446,13 +472,21 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 	}
 	
 	/**
+	 * Returns the list with all currently available files on the server.
+	 * @return
+	 */
+	public String[] getFileNameList() {
+		return this.currentAvailableFiles;
+	}
+	
+	/**
 	 * Returns the list with all downUploaders for use in the inputhandler.
 	 * @return
 	 */
 	public DownUploaderHandler getFilelist() {
 		return this.loadList;
 	}
-	
+		
     //Queueing and list methods:
     
     /**
@@ -460,7 +494,7 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
      * @param packet
      */
     public void addToSendingQueue(byte[] packet) {
-    	System.out.println("Packet added to sending queue.");
+    	//System.out.println("Packet added to sending queue.");
     	this.sendingQueue.add(packet);
     }
     
@@ -469,7 +503,7 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
      * @param packet
      */
     public void addToReceivingQueue(byte[] packet) {//, InetAddress addr, int port
-    	System.out.println("Packet added to receiving queue.");
+    	//System.out.println("Packet added to receiving queue.");
     	this.receivingQueue.add(packet);
     }
     
@@ -510,7 +544,7 @@ public class TransferProtocol extends Thread { //TODO trying to implement an alt
 
 		@Override
 		public void run() {
-			System.out.println("Retransmitting packet. Filenumber: " + fileNum + " Seqnumber: " + seqNum + " Acknumber: " + ackNum);
+			System.out.println("Retransmitting packet. Filenumber: " + fileNum + " Seqnumber: " + seqNum);
 			setTask();
 			
 		}

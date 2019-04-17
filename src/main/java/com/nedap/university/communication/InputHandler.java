@@ -7,6 +7,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 
@@ -33,19 +34,14 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
     private int ackNum = 0;
 	private static int clientPort = 8090;//TODO add way for client to set own port.
 	private static int serverPort = 8080;
-    
+    private File directory;
 	//Constructors:
-	public InputHandler(TransferProtocol sender) throws UnknownHostException {
-		//this.server = server;
-		//this.serverPort = serverPort;
+	public InputHandler(TransferProtocol sender, File directory) throws UnknownHostException {
+
 		this.sender = sender;
-		//inputPacket = new PacketBuilder(headerSize, packetSize);
 		outputPacket= new PacketBuilder(headerSize, packetSize);
 		this.fileNameHandler = new FileListCompiler();
-		//this.BROADCAST = InetAddress.getByName("255.255.255.255");
-		//commands = new InputCommands(directory);
-		//packetSender = new PacketSender(this.socket, this.server, this.serverPort);
-		//packetSender.start();
+		this.directory = directory;
 	}
 	
 	//Queries:
@@ -81,12 +77,12 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
        private List<byte[]> nameListByte = new ArrayList<byte[]>();
        
        public void addToList(byte[] fileNames) {
-    	   System.out.println("Adding files to list. " +  Thread.currentThread()); //TODO for testing.
+    	   //System.out.println("Adding files to list. " +  Thread.currentThread()); //TODO for testing.
     	   this.nameListByte.add(fileNames);
        }
        
        public void compileList() {
-    	   System.out.println("Compiling list. " +  Thread.currentThread()); //TODO for testing.
+    	    //System.out.println("Compiling list. " +  Thread.currentThread()); //TODO for testing.
            	String concat =",";
 	        //This is assuming all bytes have been received, so all bytes must be collected first before translating back to string. listFinalAcknowledgement method
 	        int byteLengthNames = 0;
@@ -120,10 +116,19 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	/**
 	 * Sends download request to server, first showing the available files and querying the user for the filename.
 	 */
-	public void downloadFile(Scanner userIn) { //TODO add check to make sure filename is correct.
+	public void downloadFile(Scanner userIn) {
 		System.out.println("Please type the name of the file you would like to download: ");
-		getList();
-		String fileName = userIn.nextLine();
+		boolean validFile = false;
+		String fileName = "";
+		while(!validFile) {
+			getList();
+			fileName = userIn.nextLine();
+			if (InputCommands.containsFile(this.sender.getFileNameList(), fileName)) {
+				validFile = true;
+			} else {
+				System.out.println("That file is not available, please type the name of the file you would like to download: ");
+			}
+		}
 		byte[] fileNameByteVersion = fileName.getBytes();
 		byte[] fileNameLengthBytes = InputCommands.intToBytes(fileName.length());
 		this.outputPacket.clearData();
@@ -144,9 +149,19 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	public void uploadFile(Scanner userIn) {
 		System.out.println("Please type the name of the file you would like to upload: ");
 		System.out.println("Make sure it is present in the file directory, such that the application can find it.");
+		String[] files = this.directory.list();
+		String fileName = "";
+		boolean validName = false;
 		this.outputPacket.clearData();
 		this.outputPacket.clearHeader();
-		String fileName = userIn.nextLine();
+		while(!validName) {
+			fileName = userIn.nextLine();
+			if (InputCommands.containsFile(files, fileName)) {
+				validName = true;
+			} else {
+				System.out.println("Sorry this file is not present in the directory. Please try again.");
+			}
+		}
 		byte[] fileNameByteVersion = fileName.getBytes();
 		byte[] fileNameLengthBytes = InputCommands.intToBytes(fileName.length());
 		this.outputPacket.setFileNumber((short) sender.getAvailableFileNumber()); //TODO select available file number.
@@ -160,6 +175,21 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 		this.outputPacket.setCheckSum(outputPacket.calculateCheckSum(outputPacket.getCRCFile()));
 		byte[] outputData = this.outputPacket.getPacket();
 		sender.addToSendingQueue(outputData);
+	}
+	
+	/**
+	 * Semds a pause request to the server, first showing all active downloads and querying them to select one.
+	 * @param userIn
+	 */
+	public void pause(Scanner userIn) {
+		String separatorIntra = ":";
+		HashMap<Short, String> activeFileMapping = new HashMap<Short, String>();
+		String [] activeFiles = sender.getFilelist().getActiveFiles();
+		for (String information : activeFiles) {
+			String[] separatedInfo = information.split(separatorIntra);
+			System.out.println("File Number: " + separatedInfo[0] + "File name: " + separatedInfo[1]);
+			activeFileMapping.put(Short.valueOf(separatedInfo[0]), separatedInfo[1]);
+		}
 	}
 
 }

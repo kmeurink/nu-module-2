@@ -40,7 +40,7 @@ public class InputCommands {
 	 */
 	public void listRequest() { //TODO improve structure and test
 		fileNamesList = new ArrayList<byte[]>();
-		int seqNum = 1;
+		int ackNum = 1;
     	//Add all file names together in a byte array.
         byte[] nameByte;
         String allFiles = "";
@@ -78,8 +78,8 @@ public class InputCommands {
         		headerConstructor.setFlags(FlagBytes.SYNLISTACKFIN);
         	}
         	headerConstructor.setFileNumber(nonDownloadFileNumber);
-        	headerConstructor.setSeqNumber(seqNum);
-        	seqNum++;
+        	headerConstructor.setAckNumber(ackNum);
+        	ackNum++;
         	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));//TODO this seems a bit ridiculous, replace by a simpler version?
         	fileNamesList.add(headerConstructor.getPacket());
         }
@@ -98,23 +98,25 @@ public class InputCommands {
 		return fileName;
 	}
 	
-	public byte[] listAcknowledgement(int seq) { 
+	public byte[] listAcknowledgement(int ack) { 
 		System.out.println("Received acknowledgement of the list arrival");
 		headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.LISTACK);
-    	headerConstructor.setAckNumber(seq);
+    	headerConstructor.setAckNumber(ack - 1);
+    	headerConstructor.setSeqNumber(ack);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
         replyPacket = headerConstructor.getPacket();
         return replyPacket;
         }
 	
-	public byte[] listFinalAcknowledgement(int seq) {
+	public byte[] listFinalAcknowledgement(int ack) {
     	System.out.println("Received final acknowledgement of the list request");
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.LISTACK);
-    	headerConstructor.setAckNumber(seq);
+    	headerConstructor.setAckNumber(ack);
+    	headerConstructor.setSeqNumber(ack);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
         replyPacket = headerConstructor.getPacket();
         return replyPacket;
@@ -156,7 +158,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setFlags(FlagBytes.SYNDOWNACK);
-    	headerConstructor.setAckNumber(0);
+    	headerConstructor.setAckNumber(1);
     	headerConstructor.setSeqNumber(0);
     	headerConstructor.setFileNumber(fileNumber);
     	headerConstructor.setData(data);
@@ -171,6 +173,7 @@ public class InputCommands {
     	headerConstructor.setFlags(FlagBytes.ACKDOWN);
     	headerConstructor.setFileNumber(file);
     	headerConstructor.setAckNumber(downloadStartAck);
+    	headerConstructor.setSeqNumber(downloadStartAck - 1);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
         replyPacket = headerConstructor.getPacket();
         return replyPacket;	}
@@ -179,6 +182,7 @@ public class InputCommands {
     	headerConstructor.clearData();
     	headerConstructor.clearHeader();
     	headerConstructor.setSeqNumber(ack);
+    	headerConstructor.setAckNumber(ack - 1);
     	headerConstructor.setFileNumber(load.getFileNumber());
     	if (load.checkIfLastPart()) {//TODO check if this is the last piece of the file.
     		headerConstructor.setFlags(FlagBytes.FINDOWN);
@@ -200,6 +204,7 @@ public class InputCommands {
     	load.writeFilePart(data);
     	headerConstructor.setFlags(FlagBytes.ACKDOWN);
     	headerConstructor.setAckNumber(seq + 1);
+    	headerConstructor.setSeqNumber(seq);
     	headerConstructor.setFileNumber(load.getFileNumber());
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
         replyPacket = headerConstructor.getPacket();
@@ -213,6 +218,7 @@ public class InputCommands {
     	headerConstructor.setFlags(FlagBytes.FINDOWNACK);
     	headerConstructor.setFileNumber(load.getFileNumber());
     	headerConstructor.setAckNumber(seq + 1);
+    	headerConstructor.setSeqNumber(seq);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
         replyPacket = headerConstructor.getPacket();
         return replyPacket;	}
@@ -241,6 +247,7 @@ public class InputCommands {
     	byte[] data = load.readOutFilePart();
     	headerConstructor.setData(data);
     	headerConstructor.setSeqNumber(ack);
+    	headerConstructor.setAckNumber(ack);
     	headerConstructor.setFileNumber(load.getFileNumber());
     	headerConstructor.setFlags(FlagBytes.UP);
     	headerConstructor.setCheckSum(headerConstructor.calculateCheckSum(headerConstructor.getCRCFile()));
@@ -395,6 +402,20 @@ public class InputCommands {
 	        (byte)((data >> 8) & 0xff),
 	        (byte)((data >> 0) & 0xff),
 	    };
+	}
+	
+	/**
+	 * Checks if the given array contains the given string.
+	 * @return
+	 */
+	public static boolean containsFile(String[] list, String name) {
+		boolean hasFile = false;
+		for (String i : list) {
+			if (i.equals(name)) {
+				hasFile = true;
+			}
+		}
+		return hasFile;
 	}
 
 }

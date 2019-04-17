@@ -41,6 +41,7 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	private FileInputStream fis;
 	private FileOutputStream fos;
 	private boolean lastPart = false;
+	private boolean paused = false;
 	//Constructors:
 	public DownUploader() { //TODO make multithreaded?
 		this.fileData = new ArrayList<byte[]>();
@@ -79,6 +80,10 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	 */
 	public boolean getStatus() {
 		return this.download;
+	}
+	
+	public boolean getPaused() {
+		return this.paused;
 	}
 	
 	/**
@@ -129,6 +134,17 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	 */
 	public void setSize(int size) {
 		this.fileSize = size;
+	}
+	
+	/**
+	 * Changes the paused state of the down or upload.
+	 */
+	private void setPaused() {
+		if (this.paused == false) {
+			this.paused = true;
+		} else {
+			this.paused = false;
+		}
 	}
 	
 	/**
@@ -201,12 +217,14 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	 */
 	public void writeFilePart(byte[] data) {
 		try {
-			//byte[] tempStorage = data;
-			//for (int i = 0; i < data.length; i++) {
-			//	if(tempStorage[i] != (byte) 0) {
-					fos.write(data);
-			//	}
-			//}
+			byte[] tempStorage = data;
+			for (int i = 0; i < tempStorage.length; i++) {
+				if(this.currentPointer < this.getSize()) {
+					fos.write(data[i]);
+					//System.out.println("Pointer is at: "+ currentPointer + " filesize is: " + this.getSize() );
+					this.currentPointer++;
+				}
+			}
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

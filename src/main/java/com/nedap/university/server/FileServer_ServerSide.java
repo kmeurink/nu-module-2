@@ -43,7 +43,7 @@ public class FileServer_ServerSide {
     	this.reliableSender = new TransferProtocol(socket, fileDirectory);
     	this.reliableSender.start();
 		this.clientAddress = InetAddress.getByName("localhost");//TODO for testing
-		inputHandler = new InputHandler(reliableSender);
+		inputHandler = new InputHandler(reliableSender, fileDirectory);
     }
  
     public static void main(String[] args) {

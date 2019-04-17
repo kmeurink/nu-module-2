@@ -48,10 +48,26 @@ public class DownUploaderHandler { //TODO make multithreaded? Depends on how the
 	 */
 	public boolean checkFilePresence(boolean download, short file) {
 		boolean filePresent = false;
+
 		if (this.downUploaders.containsKey(file) && this.downUploaders.get(file).getStatus() == download) {
 			filePresent = true;
 		}
 		return !filePresent;
+	}
+	
+	public String[] getActiveFiles() {
+		String[] activeFiles = new String[this.downUploaders.size()];
+		String separatorIntra = ":";
+		int count = 0;
+		for (DownUploader i : this.downUploaders.values()) {
+			String fileInformation = "";
+			fileInformation += i.getFileNumber();
+			fileInformation += separatorIntra;
+			fileInformation += i.getName();
+			activeFiles[count] = fileInformation;
+			count++;
+		}
+		return activeFiles;
 	}
 	
 	//Commands:

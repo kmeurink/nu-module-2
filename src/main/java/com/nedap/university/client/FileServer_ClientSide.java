@@ -43,7 +43,7 @@ public class FileServer_ClientSide {
 		socket.setSoTimeout(2000);
 		packetReceiver = new PacketReceiver(socket);
 		this.serverAddress = InetAddress.getByName("localhost");//TODO for testing
-		inputHandler = new InputHandler(reliableSender); //TODO create method to set them, instead of on boot?
+		inputHandler = new InputHandler(reliableSender, fileDirectory); //TODO create method to set them, instead of on boot?
     }
     
     public static void main(String[] args) {
@@ -124,7 +124,7 @@ public class FileServer_ClientSide {
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
-				System.out.println("Packet received from server, flag: " + handledPacket[10]); //TODO for testing
+				//System.out.println("Packet received from server, flag: " + handledPacket[10]); //TODO for testing
 				this.reliableSender.setAddress(this.packetReceiver.getReceiverAddress());
 				this.reliableSender.setPort(serverPort);
 				this.reliableSender.addToReceivingQueue(handledPacket);
@@ -182,7 +182,7 @@ public class FileServer_ClientSide {
 		System.out.println("\\\\ 3 : Download a file from the server.                                                                         \\\\");
 		System.out.println("\\\\ 4 : Upload a file to the server.                                                                             \\\\");
 		System.out.println("\\\\ 5 : Show the statistics of the server connection.                                                            \\\\");
-		System.out.println("\\\\ 6 : Pause and upload or download.				                                                              \\\\");
+		System.out.println("\\\\ 6 : Pause upload or download                                                                                 \\\\");
 		System.out.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
 		System.out.println();
 		System.out.println();
@@ -204,8 +204,10 @@ public class FileServer_ClientSide {
 			this.inputHandler.uploadFile(userIn);
 		} else if (input.equals("5")) {
 			System.out.println("Sorry this command has not yet been implemented.");
+			//this.inputHandler.statistics();
 		} else if (input.equals("6")) {
 			System.out.println("Sorry this command has not yet been implemented.");
+			//this.inputHandler.pause(userIn);
 		}
 	}
 	
