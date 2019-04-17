@@ -191,5 +191,9 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 			activeFileMapping.put(Short.valueOf(separatedInfo[0]), separatedInfo[1]);
 		}
 	}
+	
+	public void statistics() {
+		System.out.println(this.sender.calculateStatistics());
+	}
 
 }

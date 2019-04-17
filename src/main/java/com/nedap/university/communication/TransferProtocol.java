@@ -26,7 +26,7 @@ import com.nedap.university.utilities.InputCommands;
  * @author kester.meurink
  *
  */
-public class TransferProtocol extends Thread {
+public class TransferProtocol extends Thread { //TODO current implementation is not fully reliable. Multiple actions at the same time are not possible and larger files also cause issues.
 
 	//Named constants:
 	static final int HEADERSIZE=22;   // number of header bytes in each packet
@@ -60,13 +60,16 @@ public class TransferProtocol extends Thread {
     private long packetsSent = 0;
     private long packetsReceived = 0;
     private int maxPackets = 1;
-    
+    private long packetSendTime;
+    private long packetReceiveTime;
+    private List<Long> transferTimes;
     private PacketBuilder receivedPacketAnalyzer;
     private PacketBuilder sentPacketAnalyzer;
     
     //Constructors:
     public TransferProtocol(DatagramSocket socket, File directory) {
     	this.timeOutList = new HashMap<>();
+    	this.transferTimes = new ArrayList<Long>();
     	this.socket = socket;
     	this.sendingQueue = new ArrayBlockingQueue<byte[]>(queueLength);
     	this.receivingQueue = new ArrayBlockingQueue<byte[]>(queueLength);
@@ -99,13 +102,14 @@ public class TransferProtocol extends Thread {
 		        	this.lastPacketSent = packetToSend.clone();
 		        	this.sentPacketAnalyzer.setPacket(lastPacketSent);
 		        	socket.send(buildDatagram(this.receiverAddress, this.receiverPort, packetToSend));
+		        	this.packetSendTime = System.nanoTime();
 		        	this.packetsSent++;
 		        	//TODO for this packet a new time out must be started which is also given the packet so that it is able to retransmit it.
 		            //TODO This sending queue is filled by the user functions of the client and by the reaction of the receiver to its received packet.
 
 		            //TODO schedule a timer, to ensure the packet is retransmitted if it never receives an ack. But not if it is an ack itself.
 		        	if(sendPacketTimerAllowed()) {
-		        		timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber());
+		        		timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber(), 0);
 			        	this.packetTimer.schedule(timeoutTask, retransmissionTime);
 			        	//packetTimerset = true;
 		        	}
@@ -152,6 +156,8 @@ public class TransferProtocol extends Thread {
     	        	this.sendingQueue.add(this.lastPacketSent);
     	        } else {
         	        if(PacketFlagSelection()) {
+        	        	this.packetReceiveTime = System.nanoTime();
+        	        	this.transferTimes.add((this.packetReceiveTime - this.packetSendTime));
         	        	//TODO if a timer has been set, cancel timer and allow for a new packet to be sent.
     		        	if(timeOutList.containsKey(this.receivedPacketAnalyzer.getFileNumber()) && timeOutList.get(this.receivedPacketAnalyzer.getFileNumber()).containsKey(this.receivedPacketAnalyzer.getAckNumber() - 1)) {
     		        	//	timeoutTask = new PacketTimeout(lastPacketSent, this.sentPacketAnalyzer.getFileNumber(), this.sentPacketAnalyzer.getSeqNumber());
@@ -183,6 +189,43 @@ public class TransferProtocol extends Thread {
     
     public void setPort(int port) {
     	this.receiverPort = port;
+    }
+    
+    /**
+     * Method to calculate the statistics of the file transfers.
+     * @return
+     */
+    public String calculateStatistics() {
+    	String statistics = "";
+    	double maxSpeed = 0;
+    	double avgSpeed = 0;
+    	int count = 0;
+    	for (int i = 0; i < this.transferTimes.size(); i++) {
+    		double speedCheck = (double) ((double) DATASIZE/((double) this.transferTimes.get(i)/ (double) 1000000000));
+    		if (speedCheck > maxSpeed) {
+    			maxSpeed = speedCheck;
+    		}
+    		if (count > 1) {
+    			avgSpeed = (speedCheck + avgSpeed) / 2;
+    		} else {
+    			avgSpeed = speedCheck;
+    		}
+    		
+    	}
+    	long packetAmountLost = this.packetLost;
+    	long packetAmountSent =this.packetsSent;
+    	long packetAmountReceived = this.packetsReceived;
+    	statistics += "Average file speed: ";
+    	statistics += avgSpeed;
+    	statistics += " bytes/second. Maximal file speed: ";
+    	statistics += maxSpeed;
+    	statistics += " bytes/second. Amount of packets sent: ";
+    	statistics += packetAmountSent;
+    	statistics += " Amount of packets received: ";
+    	statistics += packetAmountReceived;
+    	statistics += " Amount of packets lost: ";
+    	statistics += packetAmountLost;
+    	return statistics;
     }
     
     /**
@@ -538,11 +581,13 @@ public class TransferProtocol extends Thread {
     	private byte[] packet;
     	private short fileNum;
     	private int seqNum;
-    	
-    	public PacketTimeout(byte[] packet, short fileNum, int seqNum) {
+    	private int retransmissionCount;
+    	int maxRetransmissionCount = 10;
+    	public PacketTimeout(byte[] packet, short fileNum, int seqNum, int retransmissionCount) {
     		this.packet = packet;
     		this.fileNum = fileNum;
     		this.seqNum = seqNum;
+    		this.retransmissionCount = retransmissionCount;
     		Map<Integer, TimerTask> tempMap= new HashMap<>();
     		tempMap.put(seqNum, this);
     		timeOutList.put(fileNum, tempMap);
@@ -559,11 +604,13 @@ public class TransferProtocol extends Thread {
 			try {
 				packetLost++;
 				timeOutList.get(fileNum).remove(seqNum);
-				TimerTask reTask = new PacketTimeout(packet, fileNum, seqNum);
-				if (!sendingQueue.contains(packet)) {
-					socket.send(buildDatagram(receiverAddress, receiverPort, packet));
-				}				
-	        	packetTimer.schedule(reTask, retransmissionTime);
+				if (retransmissionCount < maxRetransmissionCount) {
+					TimerTask reTask = new PacketTimeout(packet, fileNum, seqNum, retransmissionCount + 1);
+					if (!sendingQueue.contains(packet)) {
+						socket.send(buildDatagram(receiverAddress, receiverPort, packet));
+					}				
+		        	packetTimer.schedule(reTask, retransmissionTime);
+				}
 			} catch (IOException e) {
 				// TODO handle error
 				e.printStackTrace();

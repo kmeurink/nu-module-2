@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-/**
+/**@deprecated
  * Sends the packets to the server or client.
  * @author kester.meurink
  *

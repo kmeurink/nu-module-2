@@ -203,8 +203,7 @@ public class FileServer_ClientSide {
 			//TODO implement selector, to find the file that needs to be uploaded.
 			this.inputHandler.uploadFile(userIn);
 		} else if (input.equals("5")) {
-			System.out.println("Sorry this command has not yet been implemented.");
-			//this.inputHandler.statistics();
+			this.inputHandler.statistics();
 		} else if (input.equals("6")) {
 			System.out.println("Sorry this command has not yet been implemented.");
 			//this.inputHandler.pause(userIn);

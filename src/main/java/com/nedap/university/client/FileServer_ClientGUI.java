@@ -2,6 +2,11 @@ package com.nedap.university.client;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Class that was to be used as gui for controlling the file server, but was never implemented.
+ * @author kester.meurink
+ *
+ */
 public class FileServer_ClientGUI {
 	public static void main(String args[]){
 		//Creating the Frame
