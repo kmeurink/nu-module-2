@@ -2,6 +2,8 @@ package com.nedap.university.test;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
+
 //import org.junit.jupiter.api.BeforeEach;
 //import org.junit.jupiter.api.Test;
 import org.junit.Before;
@@ -14,14 +16,16 @@ public class DownUploaderHandlerTest {
 	private DownUploaderHandler fileHandlerTest;
 	DownUploader downUpload1;
 	DownUploader downUpload2;
-/*	
+    private String directory = "testFiles/";
+    private File fileDirectory = new File(directory);
+    
 	@Before
 	public void setUp() throws Exception {
-		fileHandlerTest = new DownUploaderHandler();
+		fileHandlerTest = new DownUploaderHandler(fileDirectory);
 		downUpload1 = new DownUploader();
 		downUpload2 = new DownUploader();
 	}
-*/
+
 	@Test
 	public void testFileHandlerInit() {
 		assertTrue(fileHandlerTest.getDownUploads().isEmpty());

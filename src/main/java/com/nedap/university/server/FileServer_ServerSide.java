@@ -34,7 +34,7 @@ public class FileServer_ServerSide {
 	private byte[] broadcastAckPacket= new byte[15];
 	private DatagramPacket broadcastACK = new DatagramPacket(broadcastAckPacket, broadcastAckPacket.length, BROADCASTaddress, serverPort);// 
     private TransferProtocol reliableSender;
-    private String directory = "testFiles/";
+    private String directory = "Files/";
     private File fileDirectory = new File(directory);
 	//Constructors:	
     public FileServer_ServerSide(int port) throws SocketException, UnknownHostException {

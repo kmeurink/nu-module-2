@@ -33,7 +33,7 @@ public class FileServer_ClientSide {
 	private InputHandler inputHandler;
     private boolean broadcasting = true;
     private Scanner userIn;
-    private String directory = "testFiles/written/";
+    private String directory = "Files/";
     private File fileDirectory = new File(directory);
     
 	//Constructors:
