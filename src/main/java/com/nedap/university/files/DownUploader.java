@@ -313,7 +313,7 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 		byte[] nameLength = InputCommands.intToBytes(this.getName().length());
 		byte[] name = this.getName().getBytes();
 		byte[] dataLength = InputCommands.intToBytes(this.getSize());
-		byte[] crc = InputCommands.longToBytes(this.calculateFileChecksum());
+		byte[] crc = InputCommands.longToBytes(this.calculateFileChecksum()); //TODO fix bug
 		init = InputCommands.concat(nameLength, name, dataLength, crc);
 		return init;
 	}
@@ -362,20 +362,48 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 	public void setFileCRC(long crc) {
 		this.checkSum = crc;
 	}
+	
+	/**
+	 * Method to close the file writer after the write is finished.
+	 */
+	public void closeWrite() {
+		try {
+			this.fos.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Method to close the file reader after the read is finished.
+	 */
+	public void closeRead() {
+		try {
+			this.fis.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	/**
 	 * Calculates the checksum for a full file of data.
 	 * @param file
 	 * @return
 	 */
-	public long calculateFileChecksum() {
+	public long calculateFileChecksum() {//File crcFile
+		//File fileToCheck = crcFile; //TODO used for solving crc bug.
 		CRC32 checkSum = new CRC32();
 		InputStream inputStream;
 		try {
 			inputStream = new FileInputStream(currentFile);
+			//System.out.println(currentFile.getAbsolutePath());
 			int cnt;
 			while ((cnt = inputStream.read()) != -1) {
 				checkSum.update(cnt);
 			}
+			inputStream.close();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -383,7 +411,6 @@ public class DownUploader {//TODO work out how it should work. And make it multi
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 		return checkSum.getValue();
 	}
 

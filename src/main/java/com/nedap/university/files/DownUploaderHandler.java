@@ -90,11 +90,11 @@ public class DownUploaderHandler { //TODO make multithreaded? Depends on how the
 	}
 	
 	/**
-	 * Creates a new download DownUploader and adds it to the list.
+	 * Creates a new download or upload DownUploader and adds it to the list.
 	 * @param fileName
 	 * @param fileNumber
 	 */
-	public void createDownload(String fileName, short fileNumber, boolean client, boolean down) {
+	public void createFileload(String fileName, short fileNumber, boolean client, boolean down) {
 		DownUploader newDownload = new DownUploader();
 		newDownload.setDirectory(directory);
 		newDownload.setFileNumber(fileNumber);

@@ -165,7 +165,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 		byte[] fileNameByteVersion = fileName.getBytes();
 		byte[] fileNameLengthBytes = InputCommands.intToBytes(fileName.length());
 		this.outputPacket.setFileNumber((short) sender.getAvailableFileNumber()); //TODO select available file number.
-		this.sender.getFilelist().createDownload(fileName, this.outputPacket.getFileNumber(), false, false);
+		this.sender.getFilelist().createFileload(fileName, this.outputPacket.getFileNumber(), false, false);
 		long crc = this.sender.getFilelist().getDownUploads().get(this.outputPacket.getFileNumber()).calculateFileChecksum();
 		int size = this.sender.getFilelist().getDownUploads().get(this.outputPacket.getFileNumber()).getSize();
 		this.outputPacket.setData(InputCommands.concat(fileNameLengthBytes, fileNameByteVersion, InputCommands.intToBytes(size), InputCommands.longToBytes(crc)));
@@ -178,7 +178,7 @@ public class InputHandler {//TODO perhaps better as a method, but is used by bot
 	}
 	
 	/**
-	 * Semds a pause request to the server, first showing all active downloads and querying them to select one.
+	 * Sends a pause request to the server, first showing all active downloads and querying them to select one.
 	 * @param userIn
 	 */
 	public void pause(Scanner userIn) {

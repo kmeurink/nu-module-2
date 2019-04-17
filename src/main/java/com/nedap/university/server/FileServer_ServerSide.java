@@ -93,7 +93,7 @@ public class FileServer_ServerSide {
 		while (!finished) {
 			try {
 				byte[] handledPacket = this.packetReceiver.receivePacket();
-				System.out.println("Packet received from client");
+				//System.out.println("Packet received from client");
 	    		if(Arrays.equals(handledPacket, this.BROADCAST.getBytes())) {
 	    			System.out.println("Sending broadcast acknowledgement");
 	        		byte[] broadcastPacket= new byte[0];
