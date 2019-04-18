@@ -67,7 +67,7 @@ task deploy {
     doLast {
         ssh.run {
             session(remotes.pi) {
-                put from: "build/libs/ClientServer-PI-${version}.jar", into: "/home/pi/NUM2.jar"
+                put from: "build/libs/FileServer-server-PI-${version}.jar", into: "/home/pi/NUM2.jar"
                 execute 'sudo systemctl restart num2.service'
             }
         }
